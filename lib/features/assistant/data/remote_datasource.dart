@@ -10,13 +10,13 @@ class AssistantRemoteDatasource {
     required String language,
     List<Map<String, dynamic>>? history,
   }) async {
-    final res = await client.post('/assistant/chat', data: {
-      'message': message,
-      'language': language,
-      'history': history ?? [],
+    // Backend: POST /api/ai/ndiogoye/chat/  body {question, chat_history} -> {answer}
+    final res = await client.post('/ai/ndiogoye/chat/', data: {
+      'question': message,
+      'chat_history': history ?? [],
     });
     if ((res.statusCode == 200) && res.data != null) {
-      return (res.data as Map<String, dynamic>)['response'] as String;
+      return (res.data as Map<String, dynamic>)['answer'] as String;
     }
     throw const ApiException(message: 'Réponse invalide du serveur');
   }

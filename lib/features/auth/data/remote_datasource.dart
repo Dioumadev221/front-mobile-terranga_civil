@@ -118,7 +118,7 @@ class AuthRemoteDatasource {
     required String code,
   }) async {
     try {
-      final res = await client.post('/auth/verify-otp/', data: {
+      final res = await client.post('/auth/otp/verify/', data: {
         'identifier': identifier,
         'code': code,
       });
@@ -149,9 +149,9 @@ class AuthRemoteDatasource {
     return data['message'] as String?;
   }
 
-  /// POST /api/auth/resend-otp/
+  /// POST /api/auth/otp/send/
   Future<String?> resendOtp({required String identifier}) async {
-    final res = await client.post('/auth/resend-otp/', data: {
+    final res = await client.post('/auth/otp/send/', data: {
       'identifier': identifier,
     });
     final data = _unwrap(res);
