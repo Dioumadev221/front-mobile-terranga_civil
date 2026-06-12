@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/constants/app_constants.dart';
+import '../../../../../core/errors/exceptions.dart';
 import '../../../../../core/router/app_router.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
@@ -11,6 +13,35 @@ import '../../../../../shared/widgets/primary_button.dart';
 import '../../../../../shared/widgets/recap_card.dart';
 import '../../../../../shared/widgets/certificate_step_indicator.dart';
 import '../providers/naissance_provider.dart';
+
+/// Traduit une erreur technique (Dio, API) en message lisible pour
+/// l'utilisateur lors de la soumission du dossier.
+String _friendlyError(Object e) {
+  if (e is ApiException) return e.message;
+  if (e is DioException) {
+    // Le NetworkInterceptor encapsule l'exception métier (ApiException,
+    // ForbiddenException, etc.) dans le champ `error` du DioException.
+    final inner = e.error;
+    if (inner is ApiException) return inner.message;
+    if (inner is UnauthorizedException) return inner.message;
+    if (inner is ForbiddenException) return inner.message;
+    if (inner is NotFoundException) return inner.message;
+    if (inner is ServerException) return inner.message;
+    if (inner is NetworkException) return inner.message;
+    if (inner is TimeoutException) return inner.message;
+    switch (e.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        return 'La requête a expiré. Vérifiez votre connexion.';
+      case DioExceptionType.connectionError:
+        return 'Pas de connexion internet.';
+      default:
+        return 'Une erreur est survenue. Veuillez réessayer.';
+    }
+  }
+  return 'Une erreur est survenue. Veuillez réessayer.';
+}
 
 /// Récapitulatif — utilisé pour "Pour moi" et "Pour une autre personne"
 class RecapOtherScreen extends ConsumerWidget {
@@ -48,12 +79,20 @@ class RecapOtherScreen extends ConsumerWidget {
         // a bien été créé).
         final uploadError = ref.read(naissanceProvider).error;
         if (uploadError != null && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(uploadError),
-              backgroundColor: AppColors.error,
-            ),
-          );
+          // Affichage différé après la frame en cours : si le SnackBar
+          // est déclenché juste après la mise à jour de l'état isLoading
+          // (passage à false), l'appel peut être silencieusement ignoré.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context)
+              ..clearSnackBars()
+              ..showSnackBar(
+                SnackBar(
+                  content: Text(uploadError),
+                  backgroundColor: AppColors.error,
+                ),
+              );
+          });
         }
         if (!context.mounted) return;
         context.push(AppRoutes.payment, extra: {
@@ -64,11 +103,18 @@ class RecapOtherScreen extends ConsumerWidget {
         });
       } catch (e) {
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(e.toString()),
-              backgroundColor: AppColors.error),
-        );
+        // Même fix : éviter qu'un SnackBar déclenché juste après la
+        // mise à jour de isLoading soit silencieusement ignoré.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context)
+            ..clearSnackBars()
+            ..showSnackBar(
+              SnackBar(
+                  content: Text(_friendlyError(e)),
+                  backgroundColor: AppColors.error),
+            );
+        });
       }
     }
 

@@ -69,9 +69,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     else if (e is TooManyAttemptsFailure)
       msg = e.message;
     else if (e is Failure) msg = e.message;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: AppColors.error),
-    );
+
+    // Affichage différé après la frame en cours : si le SnackBar est
+    // déclenché pendant une reconstruction (ex. juste après la mise à
+    // jour de l'état isLoading), l'appel peut être silencieusement
+    // ignoré. addPostFrameCallback garantit qu'il s'affiche bien.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          SnackBar(content: Text(msg), backgroundColor: AppColors.error),
+        );
+    });
   }
 
   @override

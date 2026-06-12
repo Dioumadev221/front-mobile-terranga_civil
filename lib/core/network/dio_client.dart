@@ -28,6 +28,9 @@ class DioClient {
           'Accept': 'application/json',
           'X-App-Version': AppConstants.appVersion,
           'X-Platform': 'mobile',
+          // Connexion réelle vers 10.0.2.2, mais on présente `localhost` à Django
+          // pour passer la validation ALLOWED_HOSTS sans toucher au backend.
+          if (!kIsWeb) 'Host': AppConstants.apiHostHeader,
         },
         responseType: ResponseType.json,
         validateStatus: (status) => status != null && status < 500,

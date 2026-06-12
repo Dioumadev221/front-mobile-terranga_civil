@@ -150,7 +150,7 @@ class _DecesFormScreenState extends ConsumerState<DecesFormScreen> {
       'nom':           _nomDefuntCtr.text.trim(),
       'registre':      _registreCtr.text.trim().toUpperCase(),
       'date_deces':    _dateDeces!.toIso8601String(),
-      'commune_id':    _commune!.id,
+      'commune_id':    _commune!.code,
       'commune_nom':   _commune!.name,
       'region_nom':    _regionName ?? '',
       'nom_declarant': _nomDeclarantCtr.text.trim(),

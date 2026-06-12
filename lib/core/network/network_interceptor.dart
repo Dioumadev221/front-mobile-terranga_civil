@@ -194,7 +194,11 @@ class NetworkInterceptor extends Interceptor {
       if (refreshToken == null || refreshToken.isEmpty) return null;
 
       // Dio "nu" sans intercepteurs pour éviter toute récursion.
-      final refreshDio = Dio(BaseOptions(baseUrl: AppConstants.apiBaseUrl));
+      // On garde l'en-tête `Host` pour passer la validation ALLOWED_HOSTS Django.
+      final refreshDio = Dio(BaseOptions(
+        baseUrl: AppConstants.apiBaseUrl,
+        headers: {if (!kIsWeb) 'Host': AppConstants.apiHostHeader},
+      ));
       final res = await refreshDio.post(
         '/auth/refresh/',
         data: {'refresh': refreshToken},

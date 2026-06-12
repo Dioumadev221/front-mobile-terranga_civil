@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 abstract class AppConstants {
   AppConstants._();
 
@@ -7,8 +9,15 @@ abstract class AppConstants {
   static const String appVersion = '1.0.0';
 
   // ── API ───────────────────────────────────────────────────────────────────
-  // Backend Django local (SUNU CIVIL) — accessible via 10.0.2.2 sur l'émulateur Android
-  static const String apiBaseUrl = 'http://10.0.2.2:8000/api';
+  // Web (Chrome/Mobile First) : localhost ; Émulateur Android : 10.0.2.2 (alias hôte).
+  static final String apiBaseUrl =
+      kIsWeb ? 'http://localhost:8000/api' : 'http://10.0.2.2:8000/api';
+
+  // Hôte logique envoyé dans l'en-tête HTTP `Host`. La connexion TCP part bien
+  // vers 10.0.2.2 (alias émulateur → PC hôte), mais Django valide le header
+  // `Host` contre ALLOWED_HOSTS (= localhost,127.0.0.1). On force donc `localhost`
+  // pour être accepté sans modifier le backend.
+  static const String apiHostHeader = 'localhost';
   static const Duration apiConnectTimeout = Duration(seconds: 15);
   static const Duration apiReceiveTimeout = Duration(seconds: 30);
   static const Duration apiSendTimeout = Duration(seconds: 30);

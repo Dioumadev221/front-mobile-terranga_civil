@@ -221,7 +221,7 @@ class _RecapSelfScreenState extends ConsumerState<RecapSelfScreen> {
         'registre': _registreCtr.text.trim(),
         'annee_registre': _anneeCtr.text.trim(),
         'date_naissance': _dateNaissance!.toIso8601String(),
-        'commune_id': _commune!.id,
+        'commune_id': _commune!.code,
         'commune_nom': _commune!.name,
         'region_nom': _regionName ?? '',
         'extrait_naissance': _extraitNaissance,

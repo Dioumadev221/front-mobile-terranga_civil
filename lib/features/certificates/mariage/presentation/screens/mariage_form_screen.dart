@@ -154,7 +154,7 @@ class _MariageFormScreenState extends ConsumerState<MariageFormScreen> {
           : _nomConjointCtr.text.trim(),
       'registre':       _registreCtr.text.trim().toUpperCase(),
       'annee_marriage': _anneeMarriage,
-      'commune_id':     _commune!.id,
+      'commune_id':     _commune!.code,
       'commune_nom':    _commune!.name,
       'region_nom':     _regionName ?? '',
       'type_doc':       _typeDoc,

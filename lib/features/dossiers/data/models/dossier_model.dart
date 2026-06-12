@@ -5,9 +5,12 @@ const Map<String, String> kStatusBackendToUi = {
   'draft': 'en_cours',
   'submitted': 'soumis',
   'in_review': 'en_verification',
-  'approved': 'pret',
-  'rejected': 'rejete',
+  'generated': 'valide',
+  'validated': 'valide',
+  'approved': 'valide',
+  'delivered': 'pret',
   'completed': 'pret',
+  'rejected': 'rejete',
 };
 
 /// Mapping inverse, utile si l'UI doit renvoyer un statut au backend.

@@ -19,8 +19,13 @@ class AuthRemoteDatasource {
     required String password,
   }) async {
     try {
+      // Le backend (CustomTokenObtainPairSerializer) attend le champ
+      // `email` comme nom de champ (USERNAME_FIELD = 'email'), même s'il
+      // accepte indifféremment un email ou un numéro de téléphone comme
+      // valeur. Envoyer `identifier` ferait échouer la validation côté
+      // backend (champ `email` manquant) avec un 401 générique.
       final res = await client.post('/auth/login/', data: {
-        'identifier': identifier,
+        'email': identifier,
         'password': password,
       });
 

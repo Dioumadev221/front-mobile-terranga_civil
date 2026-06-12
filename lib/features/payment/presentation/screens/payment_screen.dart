@@ -57,34 +57,47 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     final phone = _phoneCtr.text.replaceAll(' ', '');
     if (phone.length != 9) {
       setState(() => _phoneValid = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veuillez saisir un numéro de paiement valide (9 chiffres).'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      _showSnack('Veuillez saisir un numéro de paiement valide (9 chiffres).');
       return;
     }
+
+    final dossierId = widget.paymentData['dossier_id'] as String?;
+    if (dossierId == null || dossierId.isEmpty) {
+      _showSnack(
+          'Dossier introuvable. Veuillez recommencer votre demande.');
+      return;
+    }
+
     try {
       await ref.read(paymentProvider.notifier).pay(
-            dossierId: widget.paymentData['dossier_id'] as String,
+            dossierId: dossierId,
             method: _selectedMethod,
             phone: _phoneCtr.text.trim(),
           );
       if (!mounted) return;
       context.pushReplacement(
         AppRoutes.paymentSuccess,
-        extra: widget.paymentData['dossier_id'] as String,
+        extra: dossierId,
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_paymentErrorMessage(e)),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      _showSnack(_paymentErrorMessage(e));
     }
+  }
+
+  /// Affichage différé après la frame en cours : si le SnackBar est
+  /// déclenché juste après une mise à jour d'état (isLoading), l'appel
+  /// peut être silencieusement ignoré. addPostFrameCallback garantit
+  /// qu'il s'affiche bien (même fix que sur l'écran de connexion).
+  void _showSnack(String msg) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          SnackBar(content: Text(msg), backgroundColor: AppColors.error),
+        );
+    });
   }
 
   /// Traduit les erreurs techniques (Dio, API) en message lisible.
@@ -92,6 +105,17 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
     if (e is ApiException) return e.message;
     if (e is PaymentException) return e.message;
     if (e is DioException) {
+      // Le NetworkInterceptor encapsule l'exception métier (ApiException,
+      // ForbiddenException, etc.) dans le champ `error` du DioException.
+      final inner = e.error;
+      if (inner is ApiException) return inner.message;
+      if (inner is PaymentException) return inner.message;
+      if (inner is UnauthorizedException) return inner.message;
+      if (inner is ForbiddenException) return inner.message;
+      if (inner is NotFoundException) return inner.message;
+      if (inner is ServerException) return inner.message;
+      if (inner is NetworkException) return inner.message;
+      if (inner is TimeoutException) return inner.message;
       switch (e.type) {
         case DioExceptionType.connectionTimeout:
         case DioExceptionType.sendTimeout:

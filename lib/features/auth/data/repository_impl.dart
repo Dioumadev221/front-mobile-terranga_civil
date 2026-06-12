@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import '../../../core/errors/exceptions.dart';
 import '../../../core/errors/failures.dart';
 import '../domain/models/user_model.dart';
@@ -57,6 +58,32 @@ class AuthRepositoryImpl implements AuthRepository {
       throw ApiFailure(message: e.message, statusCode: 403);
     } on Failure {
       rethrow;
+    } on DioException catch (e) {
+      // Filet de sécurité : toute DioException non mappée par le
+      // datasource (ex. 429 throttling, erreurs réseau brutes) est
+      // convertie ici en Failure exploitable par l'UI, au lieu de
+      // tomber dans le `catch (_)` générique ci-dessous.
+      final status = e.response?.statusCode;
+      if (status == 401) {
+        throw const InvalidCredentialsFailure();
+      }
+      if (status == 429) {
+        throw const TooManyAttemptsFailure();
+      }
+      if (e.type == DioExceptionType.connectionError) {
+        throw const NetworkFailure();
+      }
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        throw const ServerFailure(
+            message: 'La requête a expiré. Réessayez.');
+      }
+      final data = e.response?.data;
+      final msg = (data is Map<String, dynamic>)
+          ? (data['message'] as String? ?? data['detail'] as String?)
+          : null;
+      throw ApiFailure(message: msg ?? 'Une erreur est survenue.', statusCode: status);
     } catch (_) {
       throw const UnexpectedFailure();
     }

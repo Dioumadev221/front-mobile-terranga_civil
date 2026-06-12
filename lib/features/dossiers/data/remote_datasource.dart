@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/errors/exceptions.dart';
 import '../../../core/mock/mock_config.dart';
 import '../../../core/mock/mock_service.dart';
+import '../../../core/utils/pdf_saver.dart';
 import 'models/dossier_model.dart';
 
 class DossiersRemoteDatasource {
@@ -93,6 +93,42 @@ class DossiersRemoteDatasource {
       }
     }
 
+    // Le backend (DossierCreateSerializer) ne persiste QUE le champ `metadata`
+    // (JSONField). On y consolide donc toutes les infos saisies (registre,
+    // dates, noms) avec les clés lues par le détail web et le générateur PDF,
+    // sinon elles s'affichent en « — » côté guichet.
+    final metadata = <String, dynamic>{};
+    final beneficiary = payload['beneficiary'];
+    if (beneficiary is Map) {
+      metadata.addAll(Map<String, dynamic>.from(beneficiary));
+    }
+    final declarant = payload['declarant'];
+    if (declarant is Map) {
+      metadata['declarant'] = Map<String, dynamic>.from(declarant);
+    }
+    for (final key in ['numero_registre', 'annee_registre', 'date_naissance', 'nom', 'registre']) {
+      if (payload[key] != null) metadata[key] = payload[key];
+    }
+    // Normalisation vers les clés attendues par le web.
+    final reg = metadata['numero_registre'] ?? metadata['registre'] ?? metadata['registre_marriage'];
+    if (reg != null) {
+      metadata['numero_registre'] = reg.toString();
+      metadata['registre'] = reg.toString();
+    }
+    final annee = metadata['annee_registre'] ?? metadata['annee_marriage'];
+    if (annee != null) metadata['annee_registre'] = annee;
+    final dateN = metadata['date_naissance'] ?? metadata['date_deces'];
+    if (dateN != null) {
+      metadata['date_naissance_personne'] = dateN;
+      metadata['date_naissance'] = dateN;
+    }
+    final nom = metadata['nom'] ?? metadata['nom_epoux'] ?? metadata['nom_enfant'];
+    if (nom != null) {
+      metadata['nom_enfant'] = nom;
+      metadata['nom'] = nom;
+    }
+    if (metadata.isNotEmpty) createPayload['metadata'] = metadata;
+
     // 1) Création du dossier (statut "brouillon").
     final createRes = await client.post('/dossiers/', data: createPayload);
     if (createRes.statusCode != 200 && createRes.statusCode != 201) {
@@ -149,7 +185,7 @@ class DossiersRemoteDatasource {
   }
 
   /// Télécharge le certificat PDF pour un dossier.
-  /// Retourne le chemin local du fichier sauvegardé.
+  /// Retourne le chemin local (natif) ou le nom du fichier (web).
   Future<String> downloadCertificate(
     String dossierId, {
     void Function(int received, int total)? onProgress,
@@ -158,14 +194,18 @@ class DossiersRemoteDatasource {
       // Simulation en mode mock
       return MockService.downloadCertificate(dossierId);
     }
-    final dir = await getApplicationDocumentsDirectory();
-    final savePath = '${dir.path}/certificat_$dossierId.pdf';
-    debugPrint('[DOWNLOAD] Téléchargement vers $savePath');
-    await client.download(
-      '/dossiers/$dossierId/download/',
-      savePath,
-      onReceiveProgress: onProgress,
+    // Endpoint réel du backend : `download-pdf/` (et non `download/` qui n'existe
+    // pas). On récupère le PDF en bytes, puis on le sauvegarde selon la plateforme
+    // (web : téléchargement navigateur ; natif : fichier dans documents).
+    final res = await client.get<List<int>>(
+      '/dossiers/$dossierId/download-pdf/',
+      options: Options(responseType: ResponseType.bytes),
     );
-    return savePath;
+    final bytes = res.data ?? const <int>[];
+    if (bytes.isEmpty) {
+      throw const ApiException(message: 'Certificat indisponible.');
+    }
+    debugPrint('[DOWNLOAD] PDF reçu (${bytes.length} octets)');
+    return savePdf(bytes, 'certificat_$dossierId.pdf');
   }
 }
