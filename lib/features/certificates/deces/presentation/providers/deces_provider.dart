@@ -30,20 +30,34 @@ class DecesNotifier extends StateNotifier<DecesState> {
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
+      // Le template PDF décès lit prenom_defunt + nom_defunt (séparés) et
+      // nom_declarant + lien_declarant (à plat) — pas `nom` ni `declarant`
+      // imbriqué. On envoie donc directement ces clés.
+      final parts = nomDefunt
+          .trim()
+          .split(RegExp(r'\s+'))
+          .where((p) => p.isNotEmpty)
+          .toList();
+      final prenomDefunt = parts.length > 1
+          ? parts.sublist(0, parts.length - 1).join(' ')
+          : nomDefunt;
+      final nomFamilleDefunt = parts.length > 1 ? parts.last : '';
+
       final id = await _ds.submitCertificate({
         'type': 'deces',
         'commune_id': communeId,
         'beneficiary': {
           'nom': nomDefunt,
+          'prenom_defunt': prenomDefunt,
+          'nom_defunt': nomFamilleDefunt,
           'registre': registre,
           'date_deces': dateDeces.toIso8601String().split('T').first,
+          // Déclarant (clés à plat lues par le template).
+          'nom_declarant': nomDeclarant,
+          'lien_declarant': lienParente,
           // Clés exigées par la validation backend (présence requise).
           'constat_medecin': true,
           'cni_defunt': true,
-        },
-        'declarant': {
-          'nom': nomDeclarant,
-          'lien_parente': lienParente,
         },
       });
       state = state.copyWith(isLoading: false, dossierId: id);
