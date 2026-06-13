@@ -40,11 +40,22 @@ class ResidenceNotifier extends StateNotifier<ResidenceState> {
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
+      // Le template PDF résidence lit prenoms_requerant + nom_requerant
+      // (dernier mot = nom de famille, le reste = prénoms).
+      final parts =
+          nomComplet.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
+      final tokens = parts.toList();
+      final prenomsRequerant =
+          tokens.length > 1 ? tokens.sublist(0, tokens.length - 1).join(' ') : nomComplet;
+      final nomRequerant = tokens.length > 1 ? tokens.last : '';
+
       final id = await _ds.submitCertificate({
         'type': 'residence',
         'commune_id': communeId,
         'beneficiary': {
           'nom': nomComplet,
+          'prenoms_requerant': prenomsRequerant,
+          'nom_requerant': nomRequerant,
           // Clés requises par la validation backend (présence obligatoire).
           'cni_recto': true,
           'attestation_delegue': true,
