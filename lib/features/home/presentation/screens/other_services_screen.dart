@@ -4,8 +4,9 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
-/// Écran listant les services « Autre » (au-delà de naissance/mariage/décès).
-/// Extensible : on ajoute simplement de nouvelles entrées dans [_services].
+/// Écran listant les services « Autre » (au-delà de naissance/mariage/décès),
+/// présentés en cartes carrées comme sur l'accueil. Extensible : on ajoute
+/// simplement de nouvelles entrées dans [_services].
 class OtherServicesScreen extends StatelessWidget {
   const OtherServicesScreen({super.key});
 
@@ -13,7 +14,7 @@ class OtherServicesScreen extends StatelessWidget {
     (
       Icons.home_work_outlined,
       Color(0xFF14B8A6),
-      'Certificat de résidence',
+      'Résidence',
       'Validité 3 mois',
       AppRoutes.residenceForm,
     ),
@@ -31,46 +32,46 @@ class OtherServicesScreen extends StatelessWidget {
         ),
       ),
       body: SafeArea(
-        child: ListView.separated(
+        child: GridView.builder(
           padding: const EdgeInsets.all(20),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            mainAxisSpacing: 18,
+            crossAxisSpacing: 12,
+            childAspectRatio: 0.82,
+          ),
           itemCount: _services.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (_, i) {
             final (icon, color, title, subtitle, route) = _services[i];
             return GestureDetector(
               onTap: () => context.push(route),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 46,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(icon, color: color, size: 24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 68,
+                    height: 68,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                          color: color.withValues(alpha: 0.25), width: 1.5),
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(title, style: AppTextStyles.labelMedium),
-                          const SizedBox(height: 2),
-                          Text(subtitle, style: AppTextStyles.caption),
-                        ],
-                      ),
-                    ),
-                    const Icon(Icons.chevron_right, color: AppColors.textHint),
-                  ],
-                ),
+                    child: Icon(icon, color: color, size: 30),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(title,
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.labelMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 2),
+                  Text(subtitle,
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.caption,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis),
+                ],
               ),
             );
           },

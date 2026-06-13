@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/constants/assets_constants.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../notifications/notifications.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 
 // ── Modèle service rapide ─────────────────────────────────────
 class _QuickService {
@@ -99,25 +100,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final filteredSoon  = _filteredComingSoon;
     final hasResults    = filtered.isNotEmpty || filteredSoon.isNotEmpty;
     final unreadNotifs  = ref.watch(unreadNotificationsCountProvider);
+    final user          = ref.watch(authProvider).user;
+    final name          = (user?.nomComplet.trim().isNotEmpty ?? false)
+        ? user!.nomComplet.trim()
+        : 'Citoyen';
+    final parts         = name.split(RegExp(r'\s+'));
+    final initials      = (parts.length > 1
+            ? '${parts.first[0]}${parts.last[0]}'
+            : parts.first.substring(0, parts.first.length >= 2 ? 2 : 1))
+        .toUpperCase();
 
-    return Scaffold(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
+        top: false,
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
 
-            // ── Top bar ──────────────────────────────────────
-            SliverToBoxAdapter(child: _TopBar(
+            // ── En-tête navy (avatar + salutation + recherche) ──
+            SliverToBoxAdapter(child: _NavyHeader(
+              name: name,
+              initials: initials,
               onNotifications: () => _showNotifications(context),
               unreadCount: unreadNotifs,
+              searchController: _searchCtrl,
+              onSearchChanged: (v) => setState(() => _query = v.trim()),
             )),
 
-            // ── Barre de recherche ───────────────────────────
-            SliverToBoxAdapter(child: _SearchBarWidget(
-              controller: _searchCtrl,
-              onChanged: (v) => setState(() => _query = v.trim()),
-            )),
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
             // ── Résultat vide ────────────────────────────────
             if (!hasResults)
@@ -179,6 +196,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -199,90 +217,118 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 }
 
 // ── Top Bar ───────────────────────────────────────────────────
-class _TopBar extends StatelessWidget {
+// ── En-tête navy : avatar + salutation + cloche/réglages + recherche ──
+class _NavyHeader extends StatelessWidget {
+  final String name;
+  final String initials;
   final VoidCallback onNotifications;
   final int unreadCount;
-  const _TopBar({required this.onNotifications, this.unreadCount = 0});
-
-  static const _navy = Color(0xFF0A1F5C);
+  final TextEditingController searchController;
+  final ValueChanged<String> onSearchChanged;
+  const _NavyHeader({
+    required this.name,
+    required this.initials,
+    required this.onNotifications,
+    required this.unreadCount,
+    required this.searchController,
+    required this.onSearchChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      child: Row(
+      decoration: const BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.fromLTRB(
+          16, MediaQuery.of(context).padding.top + 14, 16, 20),
+      child: Column(
         children: [
-          // Logo agrandi
-          Image.asset(Assets.logoTeranga,
-              width: 64, height: 64, fit: BoxFit.contain),
-          const SizedBox(width: 12),
-          // Titre seul (sans bonjour)
-          const Expanded(
-            child: Text('TERANGA CIVIL',
-                style: TextStyle(
-                  color: _navy,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  fontFamily: 'Poppins',
-                  letterSpacing: 1.2,
-                )),
-          ),
-          // Cloche
-          GestureDetector(
-            onTap: onNotifications,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0F4FF),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.notifications_outlined,
-                      color: _navy, size: 22),
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(
+                  color: AppColors.primaryLight,
+                  shape: BoxShape.circle,
                 ),
-                if (unreadCount > 0)
-                  Positioned(
-                    top: -3,
-                    right: -3,
-                    child: Container(
-                      padding: const EdgeInsets.all(3),
-                      constraints:
-                          const BoxConstraints(minWidth: 18, minHeight: 18),
-                      decoration: BoxDecoration(
-                        color: AppColors.error,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 1.5),
-                      ),
-                      child: Text(
-                        unreadCount > 9 ? '9+' : '$unreadCount',
-                        textAlign: TextAlign.center,
+                alignment: Alignment.center,
+                child: Text(initials,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15)),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Bonjour,',
+                        style: TextStyle(
+                            color: Color(0xFF9FB0E8), fontSize: 12)),
+                    Text(name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          height: 1,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+              _HeaderIcon(
+                icon: Icons.notifications_outlined,
+                onTap: onNotifications,
+                badge: unreadCount,
+              ),
+              const SizedBox(width: 8),
+              const _HeaderIcon(icon: Icons.settings_outlined),
+            ],
           ),
-          const SizedBox(width: 8),
-          // Paramètres
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0F4FF),
-              borderRadius: BorderRadius.circular(12),
+          const SizedBox(height: 16),
+          TextField(
+            controller: searchController,
+            onChanged: onSearchChanged,
+            style: const TextStyle(fontSize: 14, color: Color(0xFF1F2937)),
+            decoration: InputDecoration(
+              hintText: 'Rechercher un service...',
+              hintStyle:
+                  const TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+              prefixIcon: const Icon(Icons.search_rounded,
+                  color: Color(0xFF9CA3AF), size: 22),
+              suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                valueListenable: searchController,
+                builder: (_, val, __) => val.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.close_rounded,
+                            color: Color(0xFF9CA3AF), size: 20),
+                        onPressed: () {
+                          searchController.clear();
+                          onSearchChanged('');
+                        },
+                      )
+                    : const SizedBox.shrink(),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(vertical: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide:
+                    const BorderSide(color: AppColors.secondary, width: 1.5),
+              ),
             ),
-            child: const Icon(Icons.settings_outlined,
-                color: _navy, size: 22),
           ),
         ],
       ),
@@ -290,63 +336,53 @@ class _TopBar extends StatelessWidget {
   }
 }
 
-// ── Search Bar (fonctionnelle) ────────────────────────────────
-class _SearchBarWidget extends StatelessWidget {
-  final TextEditingController controller;
-  final ValueChanged<String> onChanged;
-  const _SearchBarWidget({required this.controller, required this.onChanged});
+class _HeaderIcon extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onTap;
+  final int badge;
+  const _HeaderIcon({required this.icon, this.onTap, this.badge = 0});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-      child: TextField(
-        controller: controller,
-        onChanged: onChanged,
-        style: const TextStyle(
-          fontSize: 14,
-          fontFamily: 'Poppins',
-          color: Color(0xFF1F2937),
-        ),
-        decoration: InputDecoration(
-          hintText: 'Rechercher un service...',
-          hintStyle: const TextStyle(
-            color: Color(0xFF9CA3AF),
-            fontSize: 14,
-            fontFamily: 'Poppins',
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.primaryLight,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: const Color(0xFFDBE3FF), size: 20),
           ),
-          prefixIcon: const Icon(Icons.search_rounded,
-              color: Color(0xFF9CA3AF), size: 22),
-          suffixIcon: ValueListenableBuilder<TextEditingValue>(
-            valueListenable: controller,
-            builder: (_, val, __) => val.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.close_rounded,
-                        color: Color(0xFF9CA3AF), size: 20),
-                    onPressed: () {
-                      controller.clear();
-                      onChanged('');
-                    },
-                  )
-                : const SizedBox.shrink(),
-          ),
-          filled: true,
-          fillColor: const Color(0xFFF5F7FA),
-          contentPadding: const EdgeInsets.symmetric(vertical: 14),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xFF0A1F5C), width: 1.5),
-          ),
-        ),
+          if (badge > 0)
+            Positioned(
+              top: -4,
+              right: -4,
+              child: Container(
+                padding: const EdgeInsets.all(3),
+                constraints:
+                    const BoxConstraints(minWidth: 18, minHeight: 18),
+                decoration: BoxDecoration(
+                  color: AppColors.error,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.primary, width: 1.5),
+                ),
+                child: Text(
+                  badge > 9 ? '9+' : '$badge',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      height: 1),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

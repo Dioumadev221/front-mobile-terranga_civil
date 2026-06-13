@@ -40,78 +40,13 @@ class MainScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ── Body avec FAB flottant intégré ──────────────────
-      body: Stack(
-        children: [
-          child,
-          // Bandeau assistante — en bas au-dessus de la barre de nav
-          // Affiché uniquement sur l'onglet Accueil (index 0)
-          if (currentIndex == 0)
-          Positioned(
-            bottom: 20,
-            left: 16,
-            right: 16,
-            child: GestureDetector(
-              onTap: () => context.push(AppRoutes.agentChat),
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    // Avatar — zoom sur le visage
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: SizedBox(
-                        width: 56,
-                        height: 59,
-                        child: OverflowBox(
-                          maxWidth: 130,
-                          maxHeight: 140,
-                          alignment: const Alignment(0, -0.65),
-                          child: Image.asset(
-                            'assets/images/assistante.png',
-                            width: 130,
-                            height: 140,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Texte d'invitation
-                    Expanded(
-                      child: Text(
-                        'Besoin d\'aide ? Faites votre demande directement avec notre assistante !',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Icon(Icons.chevron_right_rounded,
-                        color: AppColors.secondary, size: 24),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      // ── Barre de navigation 3 items égaux ───────────────
+      body: child,
+      // ── Barre de navigation avec micro central (assistant) ──
       bottomNavigationBar: _TerangaBottomNav(
         currentIndex: currentIndex,
         onTap: (i) => _onTabTapped(context, i),
+        onMic: () => context.push(AppRoutes.agentChat),
+        onAide: () {}, // purement visuel pour l'instant
       ),
     );
   }
@@ -120,10 +55,25 @@ class MainScaffold extends StatelessWidget {
 class _TerangaBottomNav extends StatelessWidget {
   final int currentIndex;
   final void Function(int) onTap;
-  const _TerangaBottomNav({required this.currentIndex, required this.onTap});
+  final VoidCallback onMic;
+  final VoidCallback onAide;
+  const _TerangaBottomNav({
+    required this.currentIndex,
+    required this.onTap,
+    required this.onMic,
+    required this.onAide,
+  });
+
+  static const _aideTab = _NavTab(
+    label: 'Aide',
+    icon: Icons.support_agent_outlined,
+    activeIcon: Icons.support_agent,
+    route: '',
+  );
 
   @override
   Widget build(BuildContext context) {
+    final tabs = MainScaffold._tabs;
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -141,18 +91,99 @@ class _TerangaBottomNav extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: 60,
+          height: 70,
           child: Row(
-            children: List.generate(MainScaffold._tabs.length, (i) {
-              return Expanded(
-                child: _NavItem(
-                  tab: MainScaffold._tabs[i],
-                  isActive: currentIndex == i,
-                  onTap: () => onTap(i),
-                ),
-              );
-            }),
+            children: [
+              // Groupe gauche : Accueil + Dossiers
+              Expanded(
+                flex: 2,
+                child: Row(children: [
+                  Expanded(
+                    child: _NavItem(
+                      tab: tabs[0],
+                      isActive: currentIndex == 0,
+                      onTap: () => onTap(0),
+                    ),
+                  ),
+                  Expanded(
+                    child: _NavItem(
+                      tab: tabs[1],
+                      isActive: currentIndex == 1,
+                      onTap: () => onTap(1),
+                    ),
+                  ),
+                ]),
+              ),
+              // Micro central — assistant vocal Ndiogoye
+              _MicButton(onTap: onMic),
+              // Groupe droit : Aide + Profil
+              Expanded(
+                flex: 2,
+                child: Row(children: [
+                  Expanded(
+                    child: _NavItem(
+                      tab: _aideTab,
+                      isActive: false,
+                      onTap: onAide,
+                    ),
+                  ),
+                  Expanded(
+                    child: _NavItem(
+                      tab: tabs[2],
+                      isActive: currentIndex == 2,
+                      onTap: () => onTap(2),
+                    ),
+                  ),
+                ]),
+              ),
+            ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MicButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _MicButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.mic_rounded, color: Colors.white, size: 26),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Ndiogoye',
+              style: AppTextStyles.navLabel.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );
