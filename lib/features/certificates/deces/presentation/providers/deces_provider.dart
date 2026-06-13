@@ -37,6 +37,9 @@ class DecesNotifier extends StateNotifier<DecesState> {
           'nom': nomDefunt,
           'registre': registre,
           'date_deces': dateDeces.toIso8601String().split('T').first,
+          // Clés exigées par la validation backend (présence requise).
+          'constat_medecin': true,
+          'cni_defunt': true,
         },
         'declarant': {
           'nom': nomDeclarant,

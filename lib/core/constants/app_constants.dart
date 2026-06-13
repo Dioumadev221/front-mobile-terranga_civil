@@ -56,6 +56,7 @@ abstract class AppConstants {
   static const int naissanceFeesFCFA = 500;
   static const int decesFeesFCFA = 500;
   static const int mariageFeesFCFA = 1000;
+  static const int residenceFeesFCFA = 1000;
 
   // ── Délais estimés (jours ouvrés) ────────────────────────────────────────
   static const int naissanceDelayDays = 3;

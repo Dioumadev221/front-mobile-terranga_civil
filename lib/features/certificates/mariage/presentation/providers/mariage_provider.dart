@@ -37,6 +37,10 @@ class MariageNotifier extends StateNotifier<MariageState> {
           'annee_marriage': anneeMarriage,
           'nom_epoux': nomEpoux,
           'nom_epouse': nomEpouse,
+          // Clés exigées par la validation backend (présence requise).
+          'cni_epoux': true,
+          'cni_epouse': true,
+          'cni_temoins': true,
         },
       });
       state = state.copyWith(isLoading: false, dossierId: id);

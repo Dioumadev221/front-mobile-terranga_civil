@@ -29,6 +29,7 @@ import '../../features/certificates/deces/presentation/screens/deces_recap_scree
 // ── Certificates — Mariage
 import '../../features/certificates/mariage/presentation/screens/mariage_form_screen.dart';
 import '../../features/certificates/mariage/presentation/screens/mariage_recap_screen.dart';
+import '../../features/certificates/residence/presentation/screens/residence_form_screen.dart';
 
 // ── Payment
 import '../../features/payment/presentation/screens/payment_screen.dart';
@@ -77,6 +78,9 @@ abstract class AppRoutes {
   // Mariage
   static const mariageForm = '/certificates/mariage/form';
   static const mariageRecap = '/certificates/mariage/recap';
+
+  // Résidence
+  static const residenceForm = '/certificates/residence/form';
 
   // Paiement
   static const payment = '/payment';
@@ -293,6 +297,15 @@ final appRouterProvider = Provider.family<GoRouter, String>((ref, initialRoute) 
             child: MariageRecapScreen(formData: data),
           );
         },
+      ),
+
+      // ── Certificat de résidence ─────────────────────────────
+      GoRoute(
+        path: AppRoutes.residenceForm,
+        pageBuilder: (context, state) => _slidePage(
+          state: state,
+          child: const ResidenceFormScreen(),
+        ),
       ),
 
       // ── Paiement ────────────────────────────────────────────

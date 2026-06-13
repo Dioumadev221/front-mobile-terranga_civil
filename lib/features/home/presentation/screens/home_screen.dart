@@ -66,10 +66,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       onTap: () => context.push(AppRoutes.decesForm),
     ),
     _QuickService(
-      icon: Icons.folder_copy_outlined,
-      label: 'Dossiers',
-      color: const Color(0xFF1D9E75),
-      onTap: () => context.go(AppRoutes.dossiers),
+      icon: Icons.home_work_outlined,
+      label: 'Résidence',
+      color: const Color(0xFF14B8A6),
+      onTap: () => context.push(AppRoutes.residenceForm),
     ),
   ];
 
@@ -141,8 +141,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             if (filtered.isNotEmpty) ...[
               SliverToBoxAdapter(child: _SectionHeader(
                 title: 'Services disponibles',
-                actionLabel: 'Mes dossiers',
-                onAction: () => context.go(AppRoutes.dossiers),
               )),
               SliverToBoxAdapter(child: SizedBox(
                 height: 120,
