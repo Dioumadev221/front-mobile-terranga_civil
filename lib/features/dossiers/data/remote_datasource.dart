@@ -44,6 +44,37 @@ class DossiersRemoteDatasource {
     throw const NotFoundException();
   }
 
+  /// Vérifie qu'un acte existe dans le Registre Civil de la commune avant
+  /// de créer la demande (`POST /dossiers/verify-registry/`).
+  ///
+  /// Ne renvoie rien si l'acte est trouvé ; lève une [ApiException] avec le
+  /// message du backend sinon (« acte introuvable », « les noms ne
+  /// correspondent pas », CNI requise pour un tiers…).
+  Future<void> verifyRegistry({
+    required String numeroRegistre,
+    required int anneeRegistre,
+    required String communeCode,
+    required String typeActe,
+    bool isForThirdParty = false,
+  }) async {
+    try {
+      await client.post('/dossiers/verify-registry/', data: {
+        'numero_registre': numeroRegistre,
+        'annee_registre': anneeRegistre,
+        'commune': communeCode,
+        'type_acte': typeActe,
+        'is_for_third_party': isForThirdParty,
+      });
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      final msg = (data is Map<String, dynamic>)
+          ? (data['message'] as String? ??
+              'Acte introuvable dans le Registre Civil.')
+          : 'Acte introuvable dans le Registre Civil.';
+      throw ApiException(message: msg, statusCode: e.response?.statusCode);
+    }
+  }
+
   /// Crée un dossier (brouillon) puis le soumet immédiatement.
   ///
   /// [payload] est construit par les providers de certificats

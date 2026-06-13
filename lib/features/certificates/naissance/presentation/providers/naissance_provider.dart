@@ -45,6 +45,17 @@ class NaissanceNotifier extends StateNotifier<NaissanceState> {
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
+      // Vérifier d'abord que l'acte existe dans le Registre Civil de la
+      // commune. Le citoyen ne saisit pas les détails (parents, sexe…) : la
+      // commune les a déjà ; on confirme juste l'existence de l'acte.
+      await _ds.verifyRegistry(
+        numeroRegistre: registre,
+        anneeRegistre: int.parse(anneeRegistre),
+        communeCode: communeId,
+        typeActe: 'birth_certificate',
+        isForThirdParty: !forSelf,
+      );
+
       final id = await _ds.submitCertificate({
         'type': 'naissance',
         'commune_id': communeId,
