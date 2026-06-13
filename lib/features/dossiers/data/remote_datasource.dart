@@ -122,10 +122,22 @@ class DossiersRemoteDatasource {
       metadata['date_naissance_personne'] = dateN;
       metadata['date_naissance'] = dateN;
     }
-    final nom = metadata['nom'] ?? metadata['nom_epoux'] ?? metadata['nom_enfant'];
-    if (nom != null) {
-      metadata['nom_enfant'] = nom;
-      metadata['nom'] = nom;
+    final nomComplet =
+        (metadata['nom'] ?? metadata['nom_epoux'] ?? metadata['nom_enfant'])
+            ?.toString()
+            .trim();
+    if (nomComplet != null && nomComplet.isNotEmpty) {
+      metadata['nom'] = nomComplet;
+      // Le générateur PDF backend lit prenoms_enfant + nom_enfant séparément.
+      // Convention : dernier mot = nom de famille, le reste = prénoms.
+      final parts =
+          nomComplet.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+      if (parts.length > 1) {
+        metadata['nom_enfant'] = parts.last;
+        metadata['prenoms_enfant'] = parts.sublist(0, parts.length - 1).join(' ');
+      } else {
+        metadata['nom_enfant'] = nomComplet;
+      }
     }
     if (metadata.isNotEmpty) createPayload['metadata'] = metadata;
 

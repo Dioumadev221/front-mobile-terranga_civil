@@ -70,6 +70,7 @@ class RecapOtherScreen extends ConsumerWidget {
               dateNaissance: dateNaissance,
               forSelf: _forSelf,
               thirdPartyRelation: formData['lien_parente'] as String?,
+              beneficiaryName: formData['nom'] as String?,
               cniRectoPath: cniRecto,
               cniVersoPath: cniVerso,
             );

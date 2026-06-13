@@ -39,6 +39,7 @@ class NaissanceNotifier extends StateNotifier<NaissanceState> {
     required DateTime dateNaissance,
     bool forSelf = false,
     String? thirdPartyRelation,
+    String? beneficiaryName,
     String? cniRectoPath,
     String? cniVersoPath,
   }) async {
@@ -53,6 +54,11 @@ class NaissanceNotifier extends StateNotifier<NaissanceState> {
         'is_for_third_party': !forSelf,
         if (!forSelf && thirdPartyRelation != null)
           'third_party_relation': thirdPartyRelation,
+        // Nom du bénéficiaire (demande pour un tiers) : sans lui le PDF
+        // backend affiche « N/A ». Le datasource le scinde en
+        // prenoms_enfant + nom_enfant pour le générateur.
+        if (!forSelf && beneficiaryName != null && beneficiaryName.isNotEmpty)
+          'nom': beneficiaryName,
       });
 
       // Téléversement des pièces d'identité (CNI recto/verso) pour une
