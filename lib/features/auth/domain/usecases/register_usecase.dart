@@ -1,12 +1,14 @@
+import '../models/user_model.dart';
 import '../repository.dart';
 
 class RegisterUsecase {
   final AuthRepository repository;
   const RegisterUsecase(this.repository);
 
-  /// Retourne l'identifiant à utiliser pour l'écran de vérification OTP,
-  /// ainsi que le code OTP de debug (mode DEBUG uniquement, sinon `null`).
-  Future<({String identifier, String? otpDebug})> call({
+  /// Selon le backend : compte connecté directement (`needsOtp == false`)
+  /// ou vérification OTP requise (`needsOtp == true`).
+  Future<({bool needsOtp, String identifier, String? otpDebug, UserModel? user})>
+      call({
     required String prenom,
     required String nom,
     required String password,

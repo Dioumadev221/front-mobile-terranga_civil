@@ -90,7 +90,8 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<({String identifier, String? otpDebug})> register({
+  Future<({bool needsOtp, String identifier, String? otpDebug, UserModel? user})>
+      register({
     required String prenom,
     required String nom,
     required String password,
@@ -98,14 +99,37 @@ class AuthRepositoryImpl implements AuthRepository {
     String? email,
   }) async {
     try {
-      final res = await remote.register(
+      final result = await remote.register(
         prenom: prenom,
         nom: nom,
         password: password,
         phone: phone,
         email: email,
       );
-      return (identifier: res.identifier, otpDebug: res.otpDebug);
+
+      // Le backend exige encore une vérification OTP : aucun token stocké.
+      if (result.needsOtp) {
+        final otp = result.otpInfo!;
+        return (
+          needsOtp: true,
+          identifier: otp.identifier,
+          otpDebug: otp.otpDebug,
+          user: otp.user?.toDomain(),
+        );
+      }
+
+      // Le backend a renvoyé des tokens : on connecte directement l'utilisateur.
+      final tokens = result.tokens!;
+      await local.saveToken(tokens.access);
+      await local.saveRefreshToken(tokens.refresh);
+      await local.saveUserId(tokens.user.id);
+      await local.saveIdentifier(phone ?? email ?? '');
+      return (
+        needsOtp: false,
+        identifier: phone ?? email ?? '',
+        otpDebug: null,
+        user: tokens.user.toDomain(),
+      );
     } on PhoneAlreadyExistsException {
       throw const PhoneAlreadyExistsFailure();
     } on NetworkException {

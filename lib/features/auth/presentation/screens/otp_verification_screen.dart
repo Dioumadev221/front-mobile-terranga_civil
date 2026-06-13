@@ -23,6 +23,9 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
 class _OtpVerificationScreenState
     extends ConsumerState<OtpVerificationScreen> {
   final _otpCtr = TextEditingController();
+  // En web, pin_code_fields ne synchronise pas toujours le contrôleur externe :
+  // on lit donc directement la valeur fournie par onChanged.
+  String _otpCode = '';
   bool _otpComplete = false;
   bool _hasError = false;
 
@@ -37,9 +40,10 @@ class _OtpVerificationScreenState
   Future<void> _submit() async {
     setState(() => _hasError = false);
     try {
+      final code = _otpCode.isNotEmpty ? _otpCode : _otpCtr.text;
       await ref.read(authProvider.notifier).verifyOtp(
             identifier: widget.phone,
-            code: _otpCtr.text,
+            code: code,
           );
       if (!mounted) return;
       context.go(AppRoutes.home);
@@ -103,10 +107,14 @@ class _OtpVerificationScreenState
                   controller: _otpCtr,
                   hasError: _hasError,
                   onChanged: (v) => setState(() {
+                    _otpCode = v;
                     _otpComplete = v.length == 6;
                     if (_hasError) _hasError = false;
                   }),
-                  onCompleted: (_) => _submit(),
+                  onCompleted: (v) {
+                    _otpCode = v;
+                    _submit();
+                  },
                 ),
               ),
               if (_hasError) ...[

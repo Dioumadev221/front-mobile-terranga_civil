@@ -48,7 +48,7 @@ class AuthRemoteDatasource {
   /// POST /api/auth/register/
   ///
   /// Le backend crée le compte (non vérifié) et envoie un code OTP.
-  Future<NeedsOtpResponseModel> register({
+  Future<LoginResultModel> register({
     required String prenom,
     required String nom,
     required String password,
@@ -66,7 +66,13 @@ class AuthRemoteDatasource {
       });
 
       final data = _unwrap(res);
-      return NeedsOtpResponseModel.fromJson(data);
+      // Selon la version du backend, l'inscription renvoie soit directement
+      // des tokens (le compte est connecté immédiatement), soit
+      // `needs_otp: true` avec un identifiant à vérifier par code OTP.
+      if (data['needs_otp'] == true) {
+        return LoginResultModel.needsOtp(NeedsOtpResponseModel.fromJson(data));
+      }
+      return LoginResultModel.tokens(AuthTokenResponseModel.fromJson(data));
     } on DioException catch (e) {
       final data = e.response?.data;
       if (e.response?.statusCode == 400 && data is Map<String, dynamic>) {

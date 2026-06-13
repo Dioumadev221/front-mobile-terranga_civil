@@ -81,10 +81,17 @@ class _RegisterStep1ScreenState extends ConsumerState<RegisterStep1Screen> {
             email: !_usePhone ? _identifierCtr.text.trim() : null,
           );
       if (!mounted) return;
-      context.push(AppRoutes.registerStep3, extra: {
-        'identifier': result.identifier,
-        'otpDebug': result.otpDebug,
-      });
+      if (result.needsOtp) {
+        // Le backend demande une vérification OTP.
+        context.push(AppRoutes.registerStep3, extra: {
+          'identifier': result.identifier,
+          'otpDebug': result.otpDebug,
+        });
+      } else {
+        // Le backend a créé et connecté le compte directement → accueil.
+        ref.read(registrationDataProvider.notifier).reset();
+        context.go(AppRoutes.home);
+      }
     } catch (e) {
       if (!mounted) return;
       String msg = 'Une erreur est survenue.';

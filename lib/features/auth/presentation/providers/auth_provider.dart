@@ -120,7 +120,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// (peut différer de la valeur saisie si un email placeholder a été
   /// généré côté backend pour une inscription par téléphone), ainsi que
   /// le code OTP de debug (mode DEBUG uniquement, sinon `null`).
-  Future<({String identifier, String? otpDebug})> register({
+  Future<({bool needsOtp, String identifier, String? otpDebug})> register({
     required String prenom,
     required String nom,
     required String password,
@@ -136,8 +136,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
         phone: phone,
         email: email,
       );
-      state = state.copyWith(isLoading: false);
-      return result;
+      if (!result.needsOtp) {
+        // Le backend a directement connecté l'utilisateur (tokens stockés).
+        state = state.copyWith(
+          isLoading: false,
+          isAuthenticated: true,
+          user: result.user,
+        );
+      } else {
+        state = state.copyWith(isLoading: false);
+      }
+      return (
+        needsOtp: result.needsOtp,
+        identifier: result.identifier,
+        otpDebug: result.otpDebug,
+      );
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
       rethrow;

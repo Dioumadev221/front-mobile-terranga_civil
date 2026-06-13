@@ -11,11 +11,12 @@ abstract class AuthRepository {
     required String password,
   });
 
-  /// Inscription simplifiée. Retourne l'identifiant à utiliser pour la
-  /// vérification OTP (peut différer de la valeur saisie si un email
-  /// placeholder a été généré côté backend) ainsi que le code OTP de
-  /// debug renvoyé par le backend en mode DEBUG (sinon `null`).
-  Future<({String identifier, String? otpDebug})> register({
+  /// Inscription. Selon le backend, le compte peut être connecté
+  /// immédiatement (tokens stockés, `needsOtp == false`, `user` rempli) ou
+  /// nécessiter une vérification OTP (`needsOtp == true`, `identifier` à
+  /// vérifier, `otpDebug` éventuel en mode DEBUG).
+  Future<({bool needsOtp, String identifier, String? otpDebug, UserModel? user})>
+      register({
     required String prenom,
     required String nom,
     required String password,

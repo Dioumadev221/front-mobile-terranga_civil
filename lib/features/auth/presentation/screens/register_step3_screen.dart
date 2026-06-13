@@ -24,6 +24,9 @@ class RegisterStep3Screen extends ConsumerStatefulWidget {
 class _RegisterStep3ScreenState
     extends ConsumerState<RegisterStep3Screen> {
   final _otpCtr = TextEditingController();
+  // En web, pin_code_fields ne synchronise pas toujours le contrôleur externe :
+  // on lit donc la valeur fournie par onChanged.
+  String _otpCode = '';
   bool _otpComplete = false;
   bool _hasError = false;
 
@@ -49,9 +52,10 @@ class _RegisterStep3ScreenState
   Future<void> _verify() async {
     setState(() => _hasError = false);
     try {
+      final code = _otpCode.isNotEmpty ? _otpCode : _otpCtr.text;
       await ref.read(authProvider.notifier).verifyOtp(
             identifier: _identifier,
-            code: _otpCtr.text,
+            code: code,
           );
       if (!mounted) return;
       // Inscription terminée → accéder directement au dashboard
@@ -168,10 +172,14 @@ class _RegisterStep3ScreenState
                   controller: _otpCtr,
                   hasError: _hasError,
                   onChanged: (v) => setState(() {
+                    _otpCode = v;
                     _otpComplete = v.length == 6;
                     if (_hasError) _hasError = false;
                   }),
-                  onCompleted: (_) => _verify(),
+                  onCompleted: (v) {
+                    _otpCode = v;
+                    _verify();
+                  },
                 ),
               ),
               if (_hasError) ...[
