@@ -30,6 +30,17 @@ class NotificationModel {
       );
 }
 
+/// On ne montre au citoyen que les notifications « utiles » : sa demande
+/// **prête** (document disponible) ou **rejetée** (action requise). Les étapes
+/// intermédiaires créées par le backend (reçu, en cours, approuvé) sont
+/// masquées côté mobile.
+bool _isRelevantNotification(NotificationModel n) {
+  final t = n.title.toLowerCase();
+  final ready = t.contains('disponible') || t.contains('prêt') || t.contains('pret');
+  final rejected = t.contains('rejet') || t.contains('action requise');
+  return ready || rejected;
+}
+
 class NotificationsRemoteDatasource {
   final DioClient client;
   const NotificationsRemoteDatasource({required this.client});
@@ -45,6 +56,7 @@ class NotificationsRemoteDatasource {
     if (list is List) {
       return list
           .map((e) => NotificationModel.fromJson(e as Map<String, dynamic>))
+          .where(_isRelevantNotification)
           .toList();
     }
     return const [];

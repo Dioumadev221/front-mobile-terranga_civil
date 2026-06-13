@@ -5,9 +5,7 @@ import '../../../../core/constants/assets_constants.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/utils/formatters.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../dossiers/presentation/providers/dossiers_provider.dart';
+import '../../../notifications/notifications.dart';
 
 // ── Modèle service rapide ─────────────────────────────────────
 class _QuickService {
@@ -100,6 +98,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final filtered      = _filteredServices;
     final filteredSoon  = _filteredComingSoon;
     final hasResults    = filtered.isNotEmpty || filteredSoon.isNotEmpty;
+    final unreadNotifs  = ref.watch(unreadNotificationsCountProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
@@ -111,6 +110,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             // ── Top bar ──────────────────────────────────────
             SliverToBoxAdapter(child: _TopBar(
               onNotifications: () => _showNotifications(context),
+              unreadCount: unreadNotifs,
             )),
 
             // ── Barre de recherche ───────────────────────────
@@ -192,14 +192,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) => _NotificationSheet(ref: ref),
-    );
+    ).then((_) async {
+      // À la fermeture : marquer tout comme lu et rafraîchir le badge.
+      await ref.read(notificationsDatasourceProvider).markAllRead();
+      ref.invalidate(notificationsProvider);
+    });
   }
 }
 
 // ── Top Bar ───────────────────────────────────────────────────
 class _TopBar extends StatelessWidget {
   final VoidCallback onNotifications;
-  const _TopBar({required this.onNotifications});
+  final int unreadCount;
+  const _TopBar({required this.onNotifications, this.unreadCount = 0});
 
   static const _navy = Color(0xFF0A1F5C);
 
@@ -228,15 +233,45 @@ class _TopBar extends StatelessWidget {
           // Cloche
           GestureDetector(
             onTap: onNotifications,
-            child: Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0F4FF),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.notifications_outlined,
-                  color: _navy, size: 22),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0F4FF),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.notifications_outlined,
+                      color: _navy, size: 22),
+                ),
+                if (unreadCount > 0)
+                  Positioned(
+                    top: -3,
+                    right: -3,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      constraints:
+                          const BoxConstraints(minWidth: 18, minHeight: 18),
+                      decoration: BoxDecoration(
+                        color: AppColors.error,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1.5),
+                      ),
+                      child: Text(
+                        unreadCount > 9 ? '9+' : '$unreadCount',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          height: 1,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
           const SizedBox(width: 8),
@@ -596,17 +631,39 @@ class _LionAssistantBanner extends StatelessWidget {
 }
 
 // ── Notification Sheet ────────────────────────────────────────
-class _NotifItem {
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-  const _NotifItem({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-  });
+/// Icône + couleur d'une notification, déduites de son titre.
+({IconData icon, Color color}) _notifVisual(String title) {
+  final t = title.toLowerCase();
+  if (t.contains('disponible') || t.contains('prêt') || t.contains('pret')) {
+    return (icon: Icons.check_circle_outline, color: AppColors.statusGreen);
+  }
+  if (t.contains('approuv') || t.contains('valid')) {
+    return (icon: Icons.verified_outlined, color: AppColors.statusGreen);
+  }
+  if (t.contains('vérification') ||
+      t.contains('verification') ||
+      t.contains('traitement') ||
+      t.contains('cours')) {
+    return (icon: Icons.hourglass_top_outlined, color: AppColors.statusAmber);
+  }
+  if (t.contains('rejet') || t.contains('action requise')) {
+    return (icon: Icons.cancel_outlined, color: AppColors.statusRed);
+  }
+  if (t.contains('attribué') || t.contains('attribue')) {
+    return (icon: Icons.assignment_ind_outlined, color: AppColors.statusBlue);
+  }
+  return (icon: Icons.inbox_outlined, color: AppColors.statusBlue);
+}
+
+/// Temps relatif court ("à l'instant", "il y a 3 h", "il y a 2 j").
+String _relativeTime(DateTime? dt) {
+  if (dt == null) return '';
+  final diff = DateTime.now().difference(dt.toLocal());
+  if (diff.inMinutes < 1) return "à l'instant";
+  if (diff.inMinutes < 60) return 'il y a ${diff.inMinutes} min';
+  if (diff.inHours < 24) return 'il y a ${diff.inHours} h';
+  if (diff.inDays < 7) return 'il y a ${diff.inDays} j';
+  return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
 }
 
 class _NotificationSheet extends ConsumerWidget {
@@ -615,7 +672,11 @@ class _NotificationSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef _) {
-    final dossiers = ref.watch(dossiersListProvider);
+    final notifsAsync = ref.watch(notificationsProvider);
+    final unread = notifsAsync.maybeWhen(
+      data: (list) => list.where((n) => !n.isRead).length,
+      orElse: () => 0,
+    );
 
     return DraggableScrollableSheet(
       expand: false,
@@ -639,30 +700,25 @@ class _NotificationSheet extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Notifications', style: AppTextStyles.headlineSmall),
-                dossiers.when(
-                  data: (list) => list.isNotEmpty
-                      ? Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            gradient: AppColors.primaryGradient,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text('${list.length}',
-                              style: AppTextStyles.labelSmall
-                                  .copyWith(color: Colors.white)),
-                        )
-                      : const SizedBox.shrink(),
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, __) => const SizedBox.shrink(),
-                ),
+                if (unread > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradient,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text('$unread ${unread > 1 ? "nouveaux" : "nouveau"}',
+                        style: AppTextStyles.labelSmall
+                            .copyWith(color: Colors.white)),
+                  ),
               ],
             ),
           ),
           const SizedBox(height: 16),
           const Divider(height: 1),
           Expanded(
-            child: dossiers.when(
+            child: notifsAsync.when(
               loading: () => const Center(
                   child: CircularProgressIndicator(color: AppColors.primary)),
               error: (_, __) => Center(
@@ -670,50 +726,7 @@ class _NotificationSheet extends ConsumerWidget {
                     style: AppTextStyles.bodySmall),
               ),
               data: (list) {
-                final items = list.map((d) {
-                  final typeLabel =
-                      AppFormatters.certTypeLabel(d.type).toLowerCase();
-                  late String title;
-                  late String subtitle;
-                  late IconData icon;
-                  late Color color;
-                  switch (d.status) {
-                    case 'pret':
-                      title = 'Certificat prêt à télécharger';
-                      subtitle = 'Votre $typeLabel (${d.id}) est disponible.';
-                      icon = Icons.check_circle_outline;
-                      color = AppColors.statusGreen;
-                      break;
-                    case 'valide':
-                      title = 'Dossier validé';
-                      subtitle = 'Votre $typeLabel (${d.id}) a été validé.';
-                      icon = Icons.verified_outlined;
-                      color = AppColors.statusGreen;
-                      break;
-                    case 'en_verification':
-                      title = 'Dossier en vérification';
-                      subtitle = 'Votre $typeLabel (${d.id}) est en cours.';
-                      icon = Icons.hourglass_top_outlined;
-                      color = AppColors.statusAmber;
-                      break;
-                    case 'rejete':
-                      title = 'Dossier rejeté';
-                      subtitle = 'Votre $typeLabel (${d.id}) a été rejeté.';
-                      icon = Icons.cancel_outlined;
-                      color = AppColors.statusRed;
-                      break;
-                    default:
-                      title = 'Dossier reçu';
-                      subtitle = 'Votre $typeLabel (${d.id}) a été soumis.';
-                      icon = Icons.inbox_outlined;
-                      color = AppColors.statusBlue;
-                  }
-                  return _NotifItem(
-                      icon: icon, iconColor: color,
-                      title: title, subtitle: subtitle);
-                }).toList();
-
-                if (items.isEmpty) {
+                if (list.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -731,7 +744,8 @@ class _NotificationSheet extends ConsumerWidget {
                         Text('Aucune notification',
                             style: AppTextStyles.labelMedium),
                         const SizedBox(height: 4),
-                        Text('Vos dossiers s\'afficheront ici',
+                        Text('Vous serez prévenu de l\'avancement de vos demandes',
+                            textAlign: TextAlign.center,
                             style: AppTextStyles.bodySmall),
                       ],
                     ),
@@ -741,25 +755,55 @@ class _NotificationSheet extends ConsumerWidget {
                 return ListView.separated(
                   controller: scrollController,
                   padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: items.length,
+                  itemCount: list.length,
                   separatorBuilder: (_, __) =>
                       const Divider(height: 1, indent: 68),
                   itemBuilder: (_, i) {
-                    final n = items[i];
+                    final n = list[i];
+                    final v = _notifVisual(n.title);
                     return ListTile(
                       leading: Container(
                         width: 44, height: 44,
                         decoration: BoxDecoration(
-                          color: n.iconColor.withValues(alpha: 0.12),
+                          color: v.color.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(n.icon, color: n.iconColor, size: 22),
+                        child: Icon(v.icon, color: v.color, size: 22),
                       ),
-                      title: Text(n.title, style: AppTextStyles.labelMedium),
-                      subtitle: Text(n.subtitle,
-                          style: AppTextStyles.caption,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis),
+                      title: Row(
+                        children: [
+                          Expanded(
+                            child: Text(n.title,
+                                style: AppTextStyles.labelMedium,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis),
+                          ),
+                          if (!n.isRead)
+                            Container(
+                              width: 8, height: 8,
+                              margin: const EdgeInsets.only(left: 6),
+                              decoration: const BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                        ],
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(n.body,
+                              style: AppTextStyles.caption,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis),
+                          if (n.createdAt != null) ...[
+                            const SizedBox(height: 2),
+                            Text(_relativeTime(n.createdAt),
+                                style: AppTextStyles.caption
+                                    .copyWith(color: AppColors.textHint)),
+                          ],
+                        ],
+                      ),
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 20, vertical: 6),
                     );
