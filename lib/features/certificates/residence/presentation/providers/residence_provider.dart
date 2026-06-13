@@ -36,6 +36,7 @@ class ResidenceNotifier extends StateNotifier<ResidenceState> {
     required String nomComplet,
     String? pieceIdentitePath,
     String? attestationDeleguePath,
+    String? copieCniPath,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
@@ -47,6 +48,7 @@ class ResidenceNotifier extends StateNotifier<ResidenceState> {
           // Clés requises par la validation backend (présence obligatoire).
           'cni_recto': true,
           'attestation_delegue': true,
+          'copie_cni': true,
         },
       });
 
@@ -67,6 +69,15 @@ class ResidenceNotifier extends StateNotifier<ResidenceState> {
             dossierId: id,
             filePath: attestationDeleguePath,
             description: 'Attestation du délégué de quartier',
+          );
+        } catch (_) {/* best-effort */}
+      }
+      if (copieCniPath != null) {
+        try {
+          await _ds.uploadDocument(
+            dossierId: id,
+            filePath: copieCniPath,
+            description: 'Copie CNI',
           );
         } catch (_) {/* best-effort */}
       }

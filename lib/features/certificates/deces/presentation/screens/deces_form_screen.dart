@@ -38,6 +38,9 @@ class _DecesFormScreenState extends ConsumerState<DecesFormScreen> {
   final _nomDeclarantCtr = TextEditingController();
   String? _lienParente;
 
+  // Étape courante : 0 = défunt+déclarant, 1 = région/commune, 2 = pièce.
+  int _step = 0;
+
   // ── Documents ────────────────────────────────────────────
   String _typeDoc = 'piece'; // piece | extrait
   String? _docRecto;
@@ -130,6 +133,30 @@ class _DecesFormScreenState extends ConsumerState<DecesFormScreen> {
     return baseOk && docsOk;
   }
 
+  // Validité par étape
+  bool get _step0Valid =>
+      _nomDefuntCtr.text.trim().isNotEmpty &&
+      _registreCtr.text.trim().isNotEmpty &&
+      _dateDeces != null &&
+      _nomDeclarantCtr.text.trim().isNotEmpty &&
+      _lienParente != null;
+  bool get _step1Valid => _commune != null;
+  bool get _step2Valid =>
+      _docRecto != null && (!_needsVerso || _docVerso != null);
+
+  void _backStep() => setState(() => _step -= 1);
+  void _nextFromInfo() {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _step = 1);
+  }
+  void _nextFromCommune() {
+    if (_commune == null) {
+      setState(() => _communeError = true);
+      return;
+    }
+    setState(() => _step = 2);
+  }
+
   Future<void> _pickDoc(String face) async {
     final path = await DocumentUploadHelper.pick(context);
     if (path == null) return;
@@ -140,11 +167,14 @@ class _DecesFormScreenState extends ConsumerState<DecesFormScreen> {
   }
 
   void _next() {
+    // Étapes déjà validées ; le Form n'est plus dans l'arbre à l'étape 3.
     if (_commune == null) {
-      setState(() => _communeError = true);
+      setState(() {
+        _step = 1;
+        _communeError = true;
+      });
       return;
     }
-    if (!_formKey.currentState!.validate()) return;
     _clearDraft();
     context.push(AppRoutes.decesRecap, extra: {
       'nom':           _nomDefuntCtr.text.trim(),
@@ -163,13 +193,18 @@ class _DecesFormScreenState extends ConsumerState<DecesFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final titles = [
+      'Défunt et déclarant',
+      'Région et commune',
+      'Pièce d\'identité',
+    ];
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Certificat de décès'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () => context.pop(),
+          onPressed: () => _step == 0 ? context.pop() : _backStep(),
         ),
       ),
       body: SafeArea(
@@ -177,222 +212,255 @@ class _DecesFormScreenState extends ConsumerState<DecesFormScreen> {
           children: [
             const CertificateStepIndicator(currentStep: CertStep.formulaire),
             const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.statusBlueLight,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text('Étape ${_step + 1} / 3',
+                      style: AppTextStyles.caption.copyWith(
+                          color: AppColors.statusBlue,
+                          fontWeight: FontWeight.w600)),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child:
+                      Text(titles[_step], style: AppTextStyles.bodySmall),
+                ),
+              ]),
+            ),
+            const SizedBox(height: 12),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Form(
-                  key: _formKey,
-                  onChanged: () {
-                    setState(() {});
-                    _saveDraft();
-                  },
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-
-                      // ══════════════════════════════════════
-                      // SECTION 1 : Informations du défunt
-                      // ══════════════════════════════════════
-                      _SectionTitle(
-                        icon: Icons.person_off_outlined,
-                        title: 'Informations du défunt',
-                        color: AppColors.statusRed,
-                        bg: AppColors.statusRedLight,
-                      ),
-                      const SizedBox(height: 20),
-
-                      AppTextField(
-                        label: 'Nom complet du défunt',
-                        hint: 'Ex: Mamadou Ba',
-                        controller: _nomDefuntCtr,
-                        validator: Validators.fullName,
-                        textInputAction: TextInputAction.next,
-                        prefixIcon: const Icon(Icons.person_outline,
-                            color: AppColors.textSecondary, size: 20),
-                      ),
-                      const SizedBox(height: 16),
-
-                      DateTextField(
-                        label: 'Date de décès',
-                        selectedDate: _dateDeces,
-                        validator: (_) => Validators.dateDeces(_dateDeces),
-                        onDateSelected: (d) {
-                          setState(() => _dateDeces = d);
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                child: _step == 0
+                    ? Form(
+                        key: _formKey,
+                        onChanged: () {
+                          setState(() {});
                           _saveDraft();
                         },
-                      ),
-                      const SizedBox(height: 16),
-
-                      DateTextField(
-                        label: 'Date de naissance du défunt (optionnel)',
-                        selectedDate: _dateNaissanceDefunt,
-                        validator: (_) => null,
-                        onDateSelected: (d) =>
-                            setState(() => _dateNaissanceDefunt = d),
-                      ),
-                      const SizedBox(height: 16),
-
-                      AppTextField(
-                        label: 'Numéro de registre',
-                        hint: 'Ex: 12345',
-                        controller: _registreCtr,
-                        keyboardType: TextInputType.number,
-                        maxLength: 5,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(5),
-                        ],
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return 'Le numéro de registre est requis.';
-                          }
-                          if (v.trim().length > 5) {
-                            return 'Maximum 5 chiffres.';
-                          }
-                          return null;
-                        },
-                        textInputAction: TextInputAction.next,
-                        suffixIcon: GestureDetector(
-                          onTap: () => _showTooltipRegistre(context),
-                          child: const Padding(
-                            padding: EdgeInsets.all(12),
-                            child: Icon(Icons.info_outline,
-                                size: 18, color: AppColors.textSecondary),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      Text('Commune du décès', style: AppTextStyles.headlineSmall),
-                      const SizedBox(height: 4),
-                      Text('Commune où le décès a été enregistré',
-                          style: AppTextStyles.bodySmall),
-                      const SizedBox(height: 12),
-                      BackendCommuneSelect(
-                        onChanged: (region, commune) => setState(() {
-                          _regionName = region;
-                          _commune = commune;
-                          if (commune != null) _communeError = false;
-                        }),
-                        errorText: _communeError
-                            ? 'Veuillez sélectionner une commune.'
-                            : null,
-                      ),
-                      const SizedBox(height: 32),
-
-                      // ══════════════════════════════════════
-                      // SECTION 2 : Déclarant
-                      // ══════════════════════════════════════
-                      _SectionTitle(
-                        icon: Icons.account_circle_outlined,
-                        title: 'Informations du déclarant',
-                        color: AppColors.primary,
-                        bg: AppColors.primary.withValues(alpha: 0.08),
-                      ),
-                      const SizedBox(height: 4),
-                      Text('La personne qui effectue la demande',
-                          style: AppTextStyles.bodySmall),
-                      const SizedBox(height: 20),
-
-                      AppTextField(
-                        label: 'Nom complet du déclarant',
-                        hint: 'Votre nom complet',
-                        controller: _nomDeclarantCtr,
-                        validator: Validators.fullName,
-                        textInputAction: TextInputAction.next,
-                        prefixIcon: const Icon(Icons.person_outline,
-                            color: AppColors.textSecondary, size: 20),
-                      ),
-                      const SizedBox(height: 16),
-
-                      _LienParenteField(
-                        value: _lienParente,
-                        onChanged: (v) {
-                          setState(() => _lienParente = v);
-                          _saveDraft();
-                        },
-                      ),
-                      const SizedBox(height: 32),
-
-                      // ══════════════════════════════════════
-                      // SECTION 3 : Pièce d'identité
-                      // ══════════════════════════════════════
-                      _SectionTitle(
-                        icon: Icons.credit_card_outlined,
-                        title: 'Pièce d\'identité du déclarant',
-                        color: AppColors.statusRed,
-                        bg: AppColors.statusRedLight,
-                        badge: 'Obligatoire',
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Nécessaire pour vous identifier et assurer la traçabilité de la demande.',
-                        style: AppTextStyles.bodySmall,
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Sélecteur type de document
-                      _TypeDocPicker(
-                        value: _typeDoc,
-                        onChanged: (v) => setState(() {
-                          _typeDoc = v;
-                          _docRecto = null;
-                          _docVerso = null;
-                        }),
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Upload face principale / document unique
-                      UploadDocumentCard(
-                        title: _typeDoc == 'extrait'
-                            ? 'Extrait de naissance'
-                            : 'Pièce d\'identité — Recto',
-                        subtitle: _typeDoc == 'extrait'
-                            ? 'Votre acte ou extrait de naissance'
-                            : 'Face avant (CNI, passeport, permis…)',
-                        icon: _typeDoc == 'extrait'
-                            ? Icons.article_outlined
-                            : Icons.credit_card_outlined,
-                        filePath: _docRecto,
-                        isRequired: true,
-                        onTap: () => _pickDoc('recto'),
-                        onRemove: _docRecto != null
-                            ? () => setState(() => _docRecto = null)
-                            : null,
-                      ),
-
-                      // Verso uniquement pour pièce d'identité
-                      if (_needsVerso) ...[
-                        const SizedBox(height: 12),
-                        UploadDocumentCard(
-                          title: 'Pièce d\'identité — Verso',
-                          subtitle: 'Face arrière de la pièce',
-                          icon: Icons.credit_card_outlined,
-                          filePath: _docVerso,
-                          isRequired: true,
-                          onTap: () => _pickDoc('verso'),
-                          onRemove: _docVerso != null
-                              ? () => setState(() => _docVerso = null)
-                              : null,
-                        ),
-                      ],
-                      const SizedBox(height: 24),
-                    ],
-                  ),
-                ),
+                        child: _buildInfoStep(),
+                      )
+                    : _step == 1
+                        ? _buildCommuneStep()
+                        : _buildDocStep(),
               ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child: PrimaryButton(
-                label: 'Voir le récapitulatif →',
-                onPressed: _next,
-                isEnabled: _isValid,
-              ),
+              child: _step == 0
+                  ? PrimaryButton(
+                      label: 'Suivant →',
+                      onPressed: _nextFromInfo,
+                      isEnabled: _step0Valid)
+                  : _step == 1
+                      ? PrimaryButton(
+                          label: 'Suivant →',
+                          onPressed: _nextFromCommune,
+                          isEnabled: _step1Valid)
+                      : PrimaryButton(
+                          label: 'Voir le récapitulatif →',
+                          onPressed: _next,
+                          isEnabled: _step2Valid),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  // ── ÉTAPE 1 : défunt + déclarant ───────────────────────────
+  Widget _buildInfoStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionTitle(
+          icon: Icons.person_off_outlined,
+          title: 'Informations du défunt',
+          color: AppColors.statusRed,
+          bg: AppColors.statusRedLight,
+        ),
+        const SizedBox(height: 20),
+        AppTextField(
+          label: 'Nom complet du défunt',
+          hint: 'Ex: Mamadou Ba',
+          controller: _nomDefuntCtr,
+          validator: Validators.fullName,
+          textInputAction: TextInputAction.next,
+          prefixIcon: const Icon(Icons.person_outline,
+              color: AppColors.textSecondary, size: 20),
+        ),
+        const SizedBox(height: 16),
+        DateTextField(
+          label: 'Date de décès',
+          selectedDate: _dateDeces,
+          validator: (_) => Validators.dateDeces(_dateDeces),
+          onDateSelected: (d) {
+            setState(() => _dateDeces = d);
+            _saveDraft();
+          },
+        ),
+        const SizedBox(height: 16),
+        DateTextField(
+          label: 'Date de naissance du défunt (optionnel)',
+          selectedDate: _dateNaissanceDefunt,
+          validator: (_) => null,
+          onDateSelected: (d) => setState(() => _dateNaissanceDefunt = d),
+        ),
+        const SizedBox(height: 16),
+        AppTextField(
+          label: 'Numéro de registre',
+          hint: 'Ex: 12345',
+          controller: _registreCtr,
+          keyboardType: TextInputType.number,
+          maxLength: 5,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(5),
+          ],
+          validator: (v) {
+            if (v == null || v.trim().isEmpty) {
+              return 'Le numéro de registre est requis.';
+            }
+            if (v.trim().length > 5) {
+              return 'Maximum 5 chiffres.';
+            }
+            return null;
+          },
+          textInputAction: TextInputAction.next,
+          suffixIcon: GestureDetector(
+            onTap: () => _showTooltipRegistre(context),
+            child: const Padding(
+              padding: EdgeInsets.all(12),
+              child: Icon(Icons.info_outline,
+                  size: 18, color: AppColors.textSecondary),
+            ),
+          ),
+        ),
+        const SizedBox(height: 28),
+        _SectionTitle(
+          icon: Icons.account_circle_outlined,
+          title: 'Informations du déclarant',
+          color: AppColors.primary,
+          bg: AppColors.primary.withValues(alpha: 0.08),
+        ),
+        const SizedBox(height: 4),
+        Text('La personne qui effectue la demande',
+            style: AppTextStyles.bodySmall),
+        const SizedBox(height: 20),
+        AppTextField(
+          label: 'Nom complet du déclarant',
+          hint: 'Votre nom complet',
+          controller: _nomDeclarantCtr,
+          validator: Validators.fullName,
+          textInputAction: TextInputAction.next,
+          prefixIcon: const Icon(Icons.person_outline,
+              color: AppColors.textSecondary, size: 20),
+        ),
+        const SizedBox(height: 16),
+        _LienParenteField(
+          value: _lienParente,
+          onChanged: (v) {
+            setState(() => _lienParente = v);
+            _saveDraft();
+          },
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  // ── ÉTAPE 2 : région + commune ─────────────────────────────
+  Widget _buildCommuneStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Région et commune du décès',
+            style: AppTextStyles.headlineSmall),
+        const SizedBox(height: 4),
+        Text('Commune où le décès a été enregistré',
+            style: AppTextStyles.bodySmall),
+        const SizedBox(height: 16),
+        BackendCommuneSelect(
+          onChanged: (region, commune) => setState(() {
+            _regionName = region;
+            _commune = commune;
+            if (commune != null) _communeError = false;
+          }),
+          errorText:
+              _communeError ? 'Veuillez sélectionner une commune.' : null,
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  // ── ÉTAPE 3 : pièce d'identité ─────────────────────────────
+  Widget _buildDocStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionTitle(
+          icon: Icons.credit_card_outlined,
+          title: 'Pièce d\'identité du déclarant',
+          color: AppColors.statusRed,
+          bg: AppColors.statusRedLight,
+          badge: 'Obligatoire',
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Nécessaire pour vous identifier et assurer la traçabilité de la demande.',
+          style: AppTextStyles.bodySmall,
+        ),
+        const SizedBox(height: 14),
+        _TypeDocPicker(
+          value: _typeDoc,
+          onChanged: (v) => setState(() {
+            _typeDoc = v;
+            _docRecto = null;
+            _docVerso = null;
+          }),
+        ),
+        const SizedBox(height: 14),
+        UploadDocumentCard(
+          title: _typeDoc == 'extrait'
+              ? 'Extrait de naissance'
+              : 'Pièce d\'identité — Recto',
+          subtitle: _typeDoc == 'extrait'
+              ? 'Votre acte ou extrait de naissance'
+              : 'Face avant (CNI, passeport, permis…)',
+          icon: _typeDoc == 'extrait'
+              ? Icons.article_outlined
+              : Icons.credit_card_outlined,
+          filePath: _docRecto,
+          isRequired: true,
+          onTap: () => _pickDoc('recto'),
+          onRemove: _docRecto != null
+              ? () => setState(() => _docRecto = null)
+              : null,
+        ),
+        if (_needsVerso) ...[
+          const SizedBox(height: 12),
+          UploadDocumentCard(
+            title: 'Pièce d\'identité — Verso',
+            subtitle: 'Face arrière de la pièce',
+            icon: Icons.credit_card_outlined,
+            filePath: _docVerso,
+            isRequired: true,
+            onTap: () => _pickDoc('verso'),
+            onRemove: _docVerso != null
+                ? () => setState(() => _docVerso = null)
+                : null,
+          ),
+        ],
+        const SizedBox(height: 24),
+      ],
     );
   }
 

@@ -36,6 +36,10 @@ class _MariageFormScreenState extends ConsumerState<MariageFormScreen> {
   String? _regionName;
   bool _communeError = false;
 
+  // Étape courante : 0 = infos (jusqu'au n° de registre), 1 = région/commune,
+  // 2 = pièce d'identité.
+  int _step = 0;
+
   // ── Documents ─────────────────────────────────────────────
   String _typeDoc  = 'piece'; // piece | extrait
   String? _docRecto;
@@ -125,6 +129,29 @@ class _MariageFormScreenState extends ConsumerState<MariageFormScreen> {
     return baseOk && docsOk;
   }
 
+  // Validité par étape
+  bool get _step0Valid =>
+      _nomDemandeurCtr.text.trim().isNotEmpty &&
+      _nomConjointCtr.text.trim().isNotEmpty &&
+      _registreCtr.text.trim().isNotEmpty &&
+      _anneeMarriage != null;
+  bool get _step1Valid => _commune != null;
+  bool get _step2Valid =>
+      _docRecto != null && (!_needsVerso || _docVerso != null);
+
+  void _backStep() => setState(() => _step -= 1);
+  void _nextFromInfo() {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _step = 1);
+  }
+  void _nextFromCommune() {
+    if (_commune == null) {
+      setState(() => _communeError = true);
+      return;
+    }
+    setState(() => _step = 2);
+  }
+
   Future<void> _pickDoc(String face) async {
     final path = await DocumentUploadHelper.pick(context);
     if (path == null) return;
@@ -135,11 +162,15 @@ class _MariageFormScreenState extends ConsumerState<MariageFormScreen> {
   }
 
   void _next() {
+    // Les étapes 1 (infos) et 2 (commune) ont déjà été validées : le Form
+    // n'est plus dans l'arbre à l'étape 3, donc on ne le revalide pas ici.
     if (_commune == null) {
-      setState(() => _communeError = true);
+      setState(() {
+        _step = 1;
+        _communeError = true;
+      });
       return;
     }
-    if (!_formKey.currentState!.validate()) return;
     _clearDraft();
     context.push(AppRoutes.mariageRecap, extra: {
       'role':           _role,
@@ -175,13 +206,18 @@ class _MariageFormScreenState extends ConsumerState<MariageFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final titles = [
+      'Informations du mariage',
+      'Région et commune',
+      'Pièce d\'identité',
+    ];
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Certificat de mariage'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () => context.pop(),
+          onPressed: () => _step == 0 ? context.pop() : _backStep(),
         ),
       ),
       body: SafeArea(
@@ -189,196 +225,229 @@ class _MariageFormScreenState extends ConsumerState<MariageFormScreen> {
           children: [
             const CertificateStepIndicator(currentStep: CertStep.formulaire),
             const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.statusBlueLight,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text('Étape ${_step + 1} / 3',
+                      style: AppTextStyles.caption.copyWith(
+                          color: AppColors.statusBlue,
+                          fontWeight: FontWeight.w600)),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child:
+                      Text(titles[_step], style: AppTextStyles.bodySmall),
+                ),
+              ]),
+            ),
+            const SizedBox(height: 12),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Form(
-                  key: _formKey,
-                  onChanged: () {
-                    setState(() {});
-                    _saveDraft();
-                  },
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-
-                      // ══════════════════════════════════════
-                      // SECTION 1 : Qui fait la demande ?
-                      // ══════════════════════════════════════
-                      _SectionTitle(
-                        icon: Icons.favorite_border_outlined,
-                        title: 'Vous êtes…',
-                        color: AppColors.secondary,
-                        bg: AppColors.secondary.withValues(alpha: 0.08),
-                      ),
-                      const SizedBox(height: 14),
-
-                      _RolePicker(
-                        value: _role,
-                        onChanged: (v) {
-                          setState(() => _role = v);
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                child: _step == 0
+                    ? Form(
+                        key: _formKey,
+                        onChanged: () {
+                          setState(() {});
                           _saveDraft();
                         },
-                      ),
-                      const SizedBox(height: 32),
-
-                      // ══════════════════════════════════════
-                      // SECTION 2 : Informations du mariage
-                      // ══════════════════════════════════════
-                      _SectionTitle(
-                        icon: Icons.villa_outlined,
-                        title: 'Informations du mariage',
-                        color: AppColors.primary,
-                        bg: AppColors.primary.withValues(alpha: 0.08),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Nom du demandeur
-                      AppTextField(
-                        label: _labelDemandeur,
-                        hint: _role == 'epoux' ? 'Ex: Oumar Diop' : 'Ex: Aïssatou Fall',
-                        controller: _nomDemandeurCtr,
-                        validator: Validators.fullName,
-                        textInputAction: TextInputAction.next,
-                        prefixIcon: const Icon(Icons.person_outline,
-                            color: AppColors.textSecondary, size: 20),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Nom du conjoint
-                      AppTextField(
-                        label: _labelConjoint,
-                        hint: _hintConjoint,
-                        controller: _nomConjointCtr,
-                        validator: Validators.fullName,
-                        textInputAction: TextInputAction.next,
-                        prefixIcon: const Icon(Icons.person_outline,
-                            color: AppColors.textSecondary, size: 20),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Année de mariage
-                      _YearPickerField(
-                        selectedYear: _anneeMarriage,
-                        onYearSelected: (y) {
-                          setState(() => _anneeMarriage = y);
-                          _saveDraft();
-                        },
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Numéro de registre
-                      AppTextField(
-                        label: 'Numéro de registre du mariage',
-                        hint: 'Ex: MR-2020-001',
-                        controller: _registreCtr,
-                        validator: Validators.mariageRegistre,
-                        textInputAction: TextInputAction.done,
-                        suffixIcon: GestureDetector(
-                          onTap: () => _showTooltipRegistre(context),
-                          child: const Padding(
-                            padding: EdgeInsets.all(12),
-                            child: Icon(Icons.info_outline,
-                                size: 18, color: AppColors.textSecondary),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Région + Commune
-                      Text('Commune du mariage', style: AppTextStyles.headlineSmall),
-                      const SizedBox(height: 4),
-                      Text('Commune où le mariage a été enregistré',
-                          style: AppTextStyles.bodySmall),
-                      const SizedBox(height: 12),
-                      BackendCommuneSelect(
-                        onChanged: (region, commune) => setState(() {
-                          _regionName = region;
-                          _commune = commune;
-                          if (commune != null) _communeError = false;
-                        }),
-                        errorText: _communeError
-                            ? 'Veuillez sélectionner une commune.'
-                            : null,
-                      ),
-                      const SizedBox(height: 32),
-
-                      // ══════════════════════════════════════
-                      // SECTION 3 : Pièce d'identité
-                      // ══════════════════════════════════════
-                      _SectionTitle(
-                        icon: Icons.credit_card_outlined,
-                        title: 'Pièce d\'identité du demandeur',
-                        color: AppColors.statusRed,
-                        bg: AppColors.statusRedLight,
-                        badge: 'Obligatoire',
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Nécessaire pour vous identifier et assurer la traçabilité.',
-                        style: AppTextStyles.bodySmall,
-                      ),
-                      const SizedBox(height: 14),
-
-                      _TypeDocPicker(
-                        value: _typeDoc,
-                        onChanged: (v) => setState(() {
-                          _typeDoc = v;
-                          _docRecto = null;
-                          _docVerso = null;
-                        }),
-                      ),
-                      const SizedBox(height: 14),
-
-                      UploadDocumentCard(
-                        title: _typeDoc == 'extrait'
-                            ? 'Extrait de naissance'
-                            : 'Pièce d\'identité — Recto',
-                        subtitle: _typeDoc == 'extrait'
-                            ? 'Votre acte ou extrait de naissance'
-                            : 'Face avant (CNI, passeport, permis…)',
-                        icon: _typeDoc == 'extrait'
-                            ? Icons.article_outlined
-                            : Icons.credit_card_outlined,
-                        filePath: _docRecto,
-                        isRequired: true,
-                        onTap: () => _pickDoc('recto'),
-                        onRemove: _docRecto != null
-                            ? () => setState(() => _docRecto = null)
-                            : null,
-                      ),
-
-                      if (_needsVerso) ...[
-                        const SizedBox(height: 12),
-                        UploadDocumentCard(
-                          title: 'Pièce d\'identité — Verso',
-                          subtitle: 'Face arrière de la pièce',
-                          icon: Icons.credit_card_outlined,
-                          filePath: _docVerso,
-                          isRequired: true,
-                          onTap: () => _pickDoc('verso'),
-                          onRemove: _docVerso != null
-                              ? () => setState(() => _docVerso = null)
-                              : null,
-                        ),
-                      ],
-                      const SizedBox(height: 24),
-                    ],
-                  ),
-                ),
+                        child: _buildInfoStep(),
+                      )
+                    : _step == 1
+                        ? _buildCommuneStep()
+                        : _buildDocStep(),
               ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child: PrimaryButton(
-                label: 'Voir le récapitulatif →',
-                onPressed: _next,
-                isEnabled: _isValid,
-              ),
+              child: _step == 0
+                  ? PrimaryButton(
+                      label: 'Suivant →',
+                      onPressed: _nextFromInfo,
+                      isEnabled: _step0Valid)
+                  : _step == 1
+                      ? PrimaryButton(
+                          label: 'Suivant →',
+                          onPressed: _nextFromCommune,
+                          isEnabled: _step1Valid)
+                      : PrimaryButton(
+                          label: 'Voir le récapitulatif →',
+                          onPressed: _next,
+                          isEnabled: _step2Valid),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  // ── ÉTAPE 1 : rôle + infos jusqu'au numéro de registre ─────
+  Widget _buildInfoStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionTitle(
+          icon: Icons.favorite_border_outlined,
+          title: 'Vous êtes…',
+          color: AppColors.secondary,
+          bg: AppColors.secondary.withValues(alpha: 0.08),
+        ),
+        const SizedBox(height: 14),
+        _RolePicker(
+          value: _role,
+          onChanged: (v) {
+            setState(() => _role = v);
+            _saveDraft();
+          },
+        ),
+        const SizedBox(height: 28),
+        _SectionTitle(
+          icon: Icons.villa_outlined,
+          title: 'Informations du mariage',
+          color: AppColors.primary,
+          bg: AppColors.primary.withValues(alpha: 0.08),
+        ),
+        const SizedBox(height: 20),
+        AppTextField(
+          label: _labelDemandeur,
+          hint: _role == 'epoux' ? 'Ex: Oumar Diop' : 'Ex: Aïssatou Fall',
+          controller: _nomDemandeurCtr,
+          validator: Validators.fullName,
+          textInputAction: TextInputAction.next,
+          prefixIcon: const Icon(Icons.person_outline,
+              color: AppColors.textSecondary, size: 20),
+        ),
+        const SizedBox(height: 16),
+        AppTextField(
+          label: _labelConjoint,
+          hint: _hintConjoint,
+          controller: _nomConjointCtr,
+          validator: Validators.fullName,
+          textInputAction: TextInputAction.next,
+          prefixIcon: const Icon(Icons.person_outline,
+              color: AppColors.textSecondary, size: 20),
+        ),
+        const SizedBox(height: 16),
+        _YearPickerField(
+          selectedYear: _anneeMarriage,
+          onYearSelected: (y) {
+            setState(() => _anneeMarriage = y);
+            _saveDraft();
+          },
+        ),
+        const SizedBox(height: 16),
+        AppTextField(
+          label: 'Numéro de registre du mariage',
+          hint: 'Ex: MR-2020-001',
+          controller: _registreCtr,
+          validator: Validators.mariageRegistre,
+          textInputAction: TextInputAction.done,
+          suffixIcon: GestureDetector(
+            onTap: () => _showTooltipRegistre(context),
+            child: const Padding(
+              padding: EdgeInsets.all(12),
+              child: Icon(Icons.info_outline,
+                  size: 18, color: AppColors.textSecondary),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  // ── ÉTAPE 2 : région + commune ─────────────────────────────
+  Widget _buildCommuneStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Région et commune du mariage',
+            style: AppTextStyles.headlineSmall),
+        const SizedBox(height: 4),
+        Text('Commune où le mariage a été enregistré',
+            style: AppTextStyles.bodySmall),
+        const SizedBox(height: 16),
+        BackendCommuneSelect(
+          onChanged: (region, commune) => setState(() {
+            _regionName = region;
+            _commune = commune;
+            if (commune != null) _communeError = false;
+          }),
+          errorText:
+              _communeError ? 'Veuillez sélectionner une commune.' : null,
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  // ── ÉTAPE 3 : pièce d'identité ─────────────────────────────
+  Widget _buildDocStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionTitle(
+          icon: Icons.credit_card_outlined,
+          title: 'Pièce d\'identité du demandeur',
+          color: AppColors.statusRed,
+          bg: AppColors.statusRedLight,
+          badge: 'Obligatoire',
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Nécessaire pour vous identifier et assurer la traçabilité.',
+          style: AppTextStyles.bodySmall,
+        ),
+        const SizedBox(height: 14),
+        _TypeDocPicker(
+          value: _typeDoc,
+          onChanged: (v) => setState(() {
+            _typeDoc = v;
+            _docRecto = null;
+            _docVerso = null;
+          }),
+        ),
+        const SizedBox(height: 14),
+        UploadDocumentCard(
+          title: _typeDoc == 'extrait'
+              ? 'Extrait de naissance'
+              : 'Pièce d\'identité — Recto',
+          subtitle: _typeDoc == 'extrait'
+              ? 'Votre acte ou extrait de naissance'
+              : 'Face avant (CNI, passeport, permis…)',
+          icon: _typeDoc == 'extrait'
+              ? Icons.article_outlined
+              : Icons.credit_card_outlined,
+          filePath: _docRecto,
+          isRequired: true,
+          onTap: () => _pickDoc('recto'),
+          onRemove: _docRecto != null
+              ? () => setState(() => _docRecto = null)
+              : null,
+        ),
+        if (_needsVerso) ...[
+          const SizedBox(height: 12),
+          UploadDocumentCard(
+            title: 'Pièce d\'identité — Verso',
+            subtitle: 'Face arrière de la pièce',
+            icon: Icons.credit_card_outlined,
+            filePath: _docVerso,
+            isRequired: true,
+            onTap: () => _pickDoc('verso'),
+            onRemove: _docVerso != null
+                ? () => setState(() => _docVerso = null)
+                : null,
+          ),
+        ],
+        const SizedBox(height: 24),
+      ],
     );
   }
 

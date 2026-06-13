@@ -17,8 +17,9 @@ import '../../../../../shared/widgets/certificate_step_indicator.dart';
 import '../../../../../shared/models/commune_model.dart';
 import '../../data/remote_datasource.dart';
 
-/// S08B — Formulaire "Pour une autre personne"
-/// L'utilisateur peut : uploader l'extrait (OCR auto) OU saisir manuellement
+/// S08B — Formulaire "Pour une autre personne" en assistant multi-étapes.
+/// Étape 1 : méthode (téléverser un extrait OU remplir). Étape 2 :
+/// informations du bénéficiaire + région/commune. Étape 3 : pièce d'identité.
 class OtherPersonScreen extends ConsumerStatefulWidget {
   const OtherPersonScreen({super.key});
 
@@ -36,6 +37,10 @@ class _OtherPersonScreenState extends ConsumerState<OtherPersonScreen> {
   BackendCommuneModel? _commune;
   String? _regionName;
   bool _communeError = false;
+
+  // Étape courante : 0 = méthode, 1 = infos, 2 = pièce d'identité.
+  int _step = 0;
+  String _method = ''; // '' | 'form' | 'upload'
 
   // Documents
   String? _cniRecto;
@@ -76,27 +81,6 @@ class _OtherPersonScreenState extends ConsumerState<OtherPersonScreen> {
       if (lien != null) _lienParente = lien;
       if (dateStr != null) _dateNaissance = DateTime.tryParse(dateStr);
     });
-    if (nom.isNotEmpty || registre.isNotEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(children: [
-              Icon(Icons.restore_outlined, color: Colors.white, size: 16),
-              SizedBox(width: 8),
-              Text('Brouillon restauré'),
-            ]),
-            backgroundColor: AppColors.statusBlue,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 2),
-            action: SnackBarAction(
-              label: 'Effacer',
-              textColor: Colors.white,
-              onPressed: _clearDraft,
-            ),
-          ),
-        );
-      }
-    }
   }
 
   Future<void> _saveDraft() async {
@@ -127,15 +111,21 @@ class _OtherPersonScreenState extends ConsumerState<OtherPersonScreen> {
     super.dispose();
   }
 
-  bool get _isValid =>
+  bool get _infoValid =>
       _nomCtr.text.trim().isNotEmpty &&
       _registreCtr.text.trim().isNotEmpty &&
       _anneeCtr.text.trim().length == 4 &&
       _dateNaissance != null &&
       _commune != null &&
-      _lienParente != null &&
-      _cniRecto != null &&
-      _cniVerso != null;
+      _lienParente != null;
+
+  bool get _cniValid => _cniRecto != null && _cniVerso != null;
+
+  bool get _canLeaveStep0 {
+    if (_method == 'form') return true;
+    if (_method == 'upload') return _extraitNaissance != null && !_ocrLoading;
+    return false;
+  }
 
   // ── Upload documents ────────────────────────────────────
   Future<void> _pickDocument(String type) async {
@@ -143,8 +133,12 @@ class _OtherPersonScreenState extends ConsumerState<OtherPersonScreen> {
     if (path == null) return;
     setState(() {
       switch (type) {
-        case 'recto':   _cniRecto = path; break;
-        case 'verso':   _cniVerso = path; break;
+        case 'recto':
+          _cniRecto = path;
+          break;
+        case 'verso':
+          _cniVerso = path;
+          break;
         case 'extrait':
           _extraitNaissance = path;
           _imageTooSmall = false;
@@ -152,7 +146,6 @@ class _OtherPersonScreenState extends ConsumerState<OtherPersonScreen> {
       }
     });
     if (type == 'extrait') {
-      // Vérification qualité
       try {
         final size = await File(path).length();
         if (size < 40000 && mounted) setState(() => _imageTooSmall = true);
@@ -169,8 +162,7 @@ class _OtherPersonScreenState extends ConsumerState<OtherPersonScreen> {
       _ocrSuccess = false;
     });
     try {
-      final ds = NaissanceRemoteDatasource(
-          client: ref.read(dioClientProvider));
+      final ds = NaissanceRemoteDatasource(client: ref.read(dioClientProvider));
       final data = await ds.extractOcr(imagePath);
       if (!mounted) return;
       setState(() {
@@ -181,18 +173,15 @@ class _OtherPersonScreenState extends ConsumerState<OtherPersonScreen> {
         }
         final reg = data['registre'] as String? ?? '';
         if (reg.isNotEmpty) {
-          _registreCtr.text =
-              reg.length > 5 ? reg.substring(0, 5) : reg;
+          _registreCtr.text = reg.length > 5 ? reg.substring(0, 5) : reg;
         }
         if (data['date_naissance'] != null) {
-          _dateNaissance =
-              DateTime.tryParse(data['date_naissance'] as String);
+          _dateNaissance = DateTime.tryParse(data['date_naissance'] as String);
         }
         final annee = data['annee_registre'];
         if (annee != null) {
           _anneeCtr.text = annee.toString();
         }
-        // Pré-sélection commune
         _ocrCommuneId = data['commune_id'] as String? ?? '';
         final communeNom = data['commune_nom'] as String? ?? '';
         _ocrMessage = communeNom.isNotEmpty
@@ -204,8 +193,7 @@ class _OtherPersonScreenState extends ConsumerState<OtherPersonScreen> {
       setState(() {
         _ocrLoading = false;
         _ocrSuccess = false;
-        _ocrMessage =
-            'Extraction automatique échouée. Remplissez manuellement.';
+        _ocrMessage = 'Extraction automatique échouée. Remplissez manuellement.';
       });
     }
   }
@@ -216,7 +204,6 @@ class _OtherPersonScreenState extends ConsumerState<OtherPersonScreen> {
       _ocrMessage = null;
       _ocrSuccess = false;
       _imageTooSmall = false;
-      // Vider les champs pré-remplis par l'OCR
       _nomCtr.clear();
       _registreCtr.clear();
       _anneeCtr.clear();
@@ -255,13 +242,25 @@ class _OtherPersonScreenState extends ConsumerState<OtherPersonScreen> {
     );
   }
 
-  void _goToRecap() {
+  // ── Navigation entre étapes ────────────────────────────────
+  void _backStep() => setState(() => _step -= 1);
+
+  void _nextFromMethod() {
+    if (!_canLeaveStep0) return;
+    setState(() => _step = 1);
+  }
+
+  void _nextFromInfo() {
     if (_commune == null) {
       setState(() => _communeError = true);
       return;
     }
     if (!_formKey.currentState!.validate()) return;
-    if (_cniRecto == null || _cniVerso == null) {
+    setState(() => _step = 2);
+  }
+
+  void _goToRecap() {
+    if (!_cniValid) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Veuillez ajouter les deux faces de la CNI.'),
@@ -289,389 +288,414 @@ class _OtherPersonScreenState extends ConsumerState<OtherPersonScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final titles = ['Comment procéder ?', 'Bénéficiaire', 'Pièce d\'identité'];
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Pour une autre personne'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () => context.pop(),
+          onPressed: () => _step == 0 ? context.pop() : _backStep(),
         ),
       ),
       body: SafeArea(
         child: Column(
           children: [
-            // ── Stepper progression ──────────────────────
             const CertificateStepIndicator(currentStep: CertStep.formulaire),
             const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.statusBlueLight,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text('Étape ${_step + 1} / 3',
+                      style: AppTextStyles.caption.copyWith(
+                          color: AppColors.statusBlue,
+                          fontWeight: FontWeight.w600)),
+                ),
+                const SizedBox(width: 8),
+                Text(titles[_step], style: AppTextStyles.bodySmall),
+              ]),
+            ),
+            const SizedBox(height: 12),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Form(
-                  key: _formKey,
-                  onChanged: () {
-                    setState(() {});
-                    _saveDraft();
-                  },
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-
-                      // ══════════════════════════════════════
-                      // SECTION 1 : Extrait (optionnel / OCR)
-                      // ══════════════════════════════════════
-                      _SectionHeader(
-                        title: 'Extrait de naissance existant',
-                        badge: 'Optionnel',
-                        badgeColor: AppColors.statusBlue,
-                        badgeBg: AppColors.statusBlueLight,
-                      ),
-                      const SizedBox(height: 8),
-                      // Explication claire des deux options
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.statusBlueLight,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                              color: AppColors.statusBlue.withValues(alpha: 0.3)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(children: [
-                              const Icon(Icons.info_outline,
-                                  color: AppColors.statusBlue, size: 16),
-                              const SizedBox(width: 8),
-                              Text('Deux options disponibles :',
-                                  style: AppTextStyles.labelMedium
-                                      .copyWith(color: AppColors.statusBlue)),
-                            ]),
-                            const SizedBox(height: 6),
-                            Text(
-                              '📎 Uploader un extrait → les champs se remplissent automatiquement\n'
-                              '✏️  Remplir manuellement → ignorez cette section',
-                              style: AppTextStyles.caption
-                                  .copyWith(color: AppColors.statusBlue),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-
-                      UploadDocumentCard(
-                        title: 'Extrait de naissance',
-                        subtitle: _ocrLoading
-                            ? 'Extraction en cours...'
-                            : 'Photo ou galerie — pré-remplissage automatique',
-                        icon: Icons.description_outlined,
-                        filePath: _extraitNaissance,
-                        isRequired: false,
-                        isLoading: _ocrLoading,
-                        onTap: _ocrLoading ? () {} : () => _pickDocument('extrait'),
-                        onRemove: (_extraitNaissance != null && !_ocrLoading)
-                            ? _clearExtrait
-                            : null,
-                      ),
-
-                      // ── Avertissement qualité ──────────────
-                      if (_imageTooSmall && !_ocrLoading) ...[
-                        const SizedBox(height: 10),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColors.statusAmberLight,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: AppColors.statusAmber.withValues(alpha: 0.4)),
-                          ),
-                          child: Row(children: [
-                            const Icon(Icons.photo_size_select_large_outlined,
-                                color: AppColors.statusAmber, size: 16),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Image de faible résolution — résultats OCR potentiellement imprécis. '
-                                'Prenez une photo nette et bien éclairée.',
-                                style: AppTextStyles.caption
-                                    .copyWith(color: AppColors.statusAmber),
-                              ),
-                            ),
-                          ]),
-                        ),
-                      ],
-
-                      // ── Feedback OCR ────────────────────────
-                      if (_ocrLoading) ...[
-                        const SizedBox(height: 10),
-                        Row(children: [
-                          const SizedBox(
-                            width: 16, height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation(AppColors.secondary),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text('Analyse de l\'extrait en cours...',
-                                style: AppTextStyles.caption
-                                    .copyWith(color: AppColors.secondary)),
-                          ),
-                        ]),
-                      ],
-                      if (_ocrMessage != null && !_ocrLoading) ...[
-                        const SizedBox(height: 10),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: _ocrSuccess
-                                ? AppColors.statusGreenLight
-                                : AppColors.statusAmberLight,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: (_ocrSuccess
-                                      ? AppColors.secondary
-                                      : AppColors.statusAmber)
-                                  .withValues(alpha: 0.4),
-                            ),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                _ocrSuccess
-                                    ? Icons.check_circle_outline
-                                    : Icons.warning_amber_outlined,
-                                size: 16,
-                                color: _ocrSuccess
-                                    ? AppColors.secondary
-                                    : AppColors.statusAmber,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(_ocrMessage!,
-                                    style: AppTextStyles.caption.copyWith(
-                                      color: _ocrSuccess
-                                          ? AppColors.secondary
-                                          : AppColors.statusAmber,
-                                    )),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // ── Bouton Réessayer (échec OCR) ────────
-                        if (!_ocrSuccess && _extraitNaissance != null) ...[
-                          const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: GestureDetector(
-                              onTap: () => _runOcr(_extraitNaissance!),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 9),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.refresh,
-                                        color: Colors.white, size: 16),
-                                    const SizedBox(width: 6),
-                                    Text('Réessayer l\'extraction',
-                                        style: AppTextStyles.caption.copyWith(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600)),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                      const SizedBox(height: 32),
-
-                      // ══════════════════════════════════════
-                      // SECTION 2 : Formulaire bénéficiaire
-                      // ══════════════════════════════════════
-                      Text('Informations du bénéficiaire',
-                          style: AppTextStyles.headlineMedium),
-                      const SizedBox(height: 4),
-                      Text(
-                        _ocrSuccess
-                            ? 'Données extraites — vérifiez et corrigez si nécessaire'
-                            : 'Remplissez les informations manuellement',
-                        style: AppTextStyles.bodySmall,
-                      ),
-                      const SizedBox(height: 20),
-
-                      // ── Lien de parenté ──────────────────────
-                      _LienParenteField(
-                        value: _lienParente,
-                        onChanged: (v) {
-                          setState(() => _lienParente = v);
-                          _saveDraft();
-                        },
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Nom complet
-                      AppTextField(
-                        label: 'Nom complet',
-                        hint: 'Ex: Fatou Sow',
-                        controller: _nomCtr,
-                        validator: Validators.fullName,
-                        textInputAction: TextInputAction.next,
-                        prefixIcon: const Icon(Icons.person_outline,
-                            color: AppColors.textSecondary, size: 20),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Registre (max 5 chiffres)
-                      AppTextField(
-                        label: 'Numéro de registre (max 5 chiffres)',
-                        hint: 'Ex: 12345',
-                        suffixIcon: GestureDetector(
-                          onTap: () => _showTooltipRegistre(context),
-                          child: const Padding(
-                            padding: EdgeInsets.all(12),
-                            child: Icon(Icons.info_outline,
-                                size: 18, color: AppColors.textSecondary),
-                          ),
-                        ),
-                        controller: _registreCtr,
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.next,
-                        maxLength: 5,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(5),
-                        ],
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return 'Le numéro de registre est requis.';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Année de registre
-                      AppTextField(
-                        label: 'Année de registre',
-                        hint: 'Ex: 2010',
-                        controller: _anneeCtr,
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.next,
-                        maxLength: 4,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(4),
-                        ],
-                        prefixIcon: const Icon(Icons.event_outlined,
-                            color: AppColors.textSecondary, size: 20),
-                        validator: (v) {
-                          if (v == null || v.trim().length != 4) {
-                            return 'L\'année de registre est requise (4 chiffres).';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Date de naissance
-                      DateTextField(
-                        label: 'Date de naissance',
-                        selectedDate: _dateNaissance,
-                        validator: (_) =>
-                            Validators.dateNaissance(_dateNaissance),
-                        onDateSelected: (d) {
-                          setState(() => _dateNaissance = d);
-                          _saveDraft();
-                        },
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Région → Commune
-                      Text('Commune déclarée',
-                          style: AppTextStyles.headlineSmall),
-                      const SizedBox(height: 4),
-                      Text(
-                        _ocrSuccess && _ocrMessage!.contains('suggérée')
-                            ? 'Commune suggérée par l\'OCR — sélectionnez dans la liste'
-                            : 'Choisissez la région puis la commune',
-                        style: AppTextStyles.bodySmall,
-                      ),
-                      const SizedBox(height: 16),
-                      BackendCommuneSelect(
-                        initialCommuneId: _ocrCommuneId,
-                        onChanged: (region, commune) => setState(() {
-                          _regionName = region;
-                          _commune = commune;
-                          if (commune != null) _communeError = false;
-                        }),
-                        errorText: _communeError
-                            ? 'Veuillez sélectionner une commune.'
-                            : null,
-                      ),
-                      const SizedBox(height: 32),
-
-                      // ══════════════════════════════════════
-                      // SECTION 3 : CNI obligatoire
-                      // ══════════════════════════════════════
-                      _SectionHeader(
-                        title: 'Pièce d\'identité (CNI)',
-                        badge: 'Obligatoire',
-                        badgeColor: AppColors.statusRed,
-                        badgeBg: AppColors.statusRedLight,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Les deux faces de la CNI sont requises pour valider la demande.',
-                        style: AppTextStyles.bodySmall,
-                      ),
-                      const SizedBox(height: 14),
-                      UploadDocumentCard(
-                        title: 'CNI — Recto',
-                        subtitle: 'Face avant de la carte d\'identité',
-                        icon: Icons.credit_card_outlined,
-                        filePath: _cniRecto,
-                        isRequired: true,
-                        onTap: () => _pickDocument('recto'),
-                        onRemove: _cniRecto != null
-                            ? () => setState(() => _cniRecto = null)
-                            : null,
-                      ),
-                      const SizedBox(height: 12),
-                      UploadDocumentCard(
-                        title: 'CNI — Verso',
-                        subtitle: 'Face arrière de la carte d\'identité',
-                        icon: Icons.credit_card_outlined,
-                        filePath: _cniVerso,
-                        isRequired: true,
-                        onTap: () => _pickDocument('verso'),
-                        onRemove: _cniVerso != null
-                            ? () => setState(() => _cniVerso = null)
-                            : null,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
-                ),
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                child: _step == 0
+                    ? _buildMethodStep()
+                    : _step == 1
+                        ? Form(
+                            key: _formKey,
+                            onChanged: () {
+                              setState(() {});
+                              _saveDraft();
+                            },
+                            child: _buildInfoStep(),
+                          )
+                        : _buildCniStep(),
               ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child: PrimaryButton(
-                label: 'Voir le récapitulatif →',
-                onPressed: _goToRecap,
-                isEnabled: _isValid,
-              ),
+              child: _step == 0
+                  ? PrimaryButton(
+                      label: 'Suivant →',
+                      onPressed: _nextFromMethod,
+                      isEnabled: _canLeaveStep0)
+                  : _step == 1
+                      ? PrimaryButton(
+                          label: 'Suivant →',
+                          onPressed: _nextFromInfo,
+                          isEnabled: _infoValid)
+                      : PrimaryButton(
+                          label: 'Voir le récapitulatif →',
+                          onPressed: _goToRecap,
+                          isEnabled: _cniValid),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ── ÉTAPE 1 : méthode ──────────────────────────────────────
+  Widget _buildMethodStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Deux options disponibles', style: AppTextStyles.headlineMedium),
+        const SizedBox(height: 4),
+        Text('Choisissez comment fournir les informations de l\'acte.',
+            style: AppTextStyles.bodySmall),
+        const SizedBox(height: 16),
+        _MethodCard(
+          icon: Icons.edit_document,
+          title: 'Remplir le formulaire',
+          subtitle: 'Saisir le bénéficiaire, le registre et la commune',
+          selected: _method == 'form',
+          onTap: () => setState(() => _method = 'form'),
+        ),
+        const SizedBox(height: 12),
+        _MethodCard(
+          icon: Icons.upload_file_outlined,
+          title: 'Téléverser un document',
+          subtitle: 'Joindre un extrait déjà en ma possession',
+          selected: _method == 'upload',
+          onTap: () => setState(() => _method = 'upload'),
+        ),
+        if (_method == 'upload') ...[
+          const SizedBox(height: 20),
+          UploadDocumentCard(
+            title: 'Extrait de naissance',
+            subtitle: _ocrLoading
+                ? 'Extraction en cours...'
+                : 'Photo ou galerie — pré-remplissage automatique',
+            icon: Icons.description_outlined,
+            filePath: _extraitNaissance,
+            isRequired: true,
+            isLoading: _ocrLoading,
+            onTap: _ocrLoading ? () {} : () => _pickDocument('extrait'),
+            onRemove: (_extraitNaissance != null && !_ocrLoading)
+                ? _clearExtrait
+                : null,
+          ),
+          if (_imageTooSmall && !_ocrLoading) ...[
+            const SizedBox(height: 10),
+            _InfoBanner(
+              icon: Icons.photo_size_select_large_outlined,
+              color: AppColors.statusAmber,
+              bg: AppColors.statusAmberLight,
+              text:
+                  'Image de faible résolution — l\'extraction peut être imprécise. Prenez une photo nette.',
+            ),
+          ],
+          if (_ocrMessage != null && !_ocrLoading) ...[
+            const SizedBox(height: 10),
+            _InfoBanner(
+              icon: _ocrSuccess
+                  ? Icons.check_circle_outline
+                  : Icons.warning_amber_outlined,
+              color: _ocrSuccess ? AppColors.secondary : AppColors.statusAmber,
+              bg: _ocrSuccess
+                  ? AppColors.statusGreenLight
+                  : AppColors.statusAmberLight,
+              text: _ocrMessage!,
+            ),
+            if (_ocrSuccess) ...[
+              const SizedBox(height: 8),
+              Text('Les champs seront pré-remplis à l\'étape suivante.',
+                  style: AppTextStyles.caption),
+            ],
+          ],
+        ],
+      ],
+    );
+  }
+
+  // ── ÉTAPE 2 : informations bénéficiaire ────────────────────
+  Widget _buildInfoStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_ocrSuccess) ...[
+          _InfoBanner(
+            icon: Icons.auto_fix_high,
+            color: AppColors.secondary,
+            bg: AppColors.statusGreenLight,
+            text: 'Champs pré-remplis depuis l\'extrait — vérifiez-les.',
+          ),
+          const SizedBox(height: 16),
+        ],
+        _LienParenteField(
+          value: _lienParente,
+          onChanged: (v) {
+            setState(() => _lienParente = v);
+            _saveDraft();
+          },
+        ),
+        const SizedBox(height: 16),
+        AppTextField(
+          label: 'Nom complet du bénéficiaire',
+          hint: 'Ex: Fatou Sow',
+          controller: _nomCtr,
+          validator: Validators.fullName,
+          textInputAction: TextInputAction.next,
+          prefixIcon: const Icon(Icons.person_outline,
+              color: AppColors.textSecondary, size: 20),
+        ),
+        const SizedBox(height: 16),
+        AppTextField(
+          label: 'Numéro de registre (max 5 chiffres)',
+          hint: 'Ex: 12345',
+          suffixIcon: GestureDetector(
+            onTap: () => _showTooltipRegistre(context),
+            child: const Padding(
+              padding: EdgeInsets.all(12),
+              child: Icon(Icons.info_outline,
+                  size: 18, color: AppColors.textSecondary),
+            ),
+          ),
+          controller: _registreCtr,
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.next,
+          maxLength: 5,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(5),
+          ],
+          validator: (v) {
+            if (v == null || v.trim().isEmpty) {
+              return 'Le numéro de registre est requis.';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        AppTextField(
+          label: 'Année de registre',
+          hint: 'Ex: 2010',
+          controller: _anneeCtr,
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.next,
+          maxLength: 4,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(4),
+          ],
+          prefixIcon: const Icon(Icons.event_outlined,
+              color: AppColors.textSecondary, size: 20),
+          validator: (v) {
+            if (v == null || v.trim().length != 4) {
+              return 'L\'année de registre est requise (4 chiffres).';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        DateTextField(
+          label: 'Date de naissance',
+          selectedDate: _dateNaissance,
+          validator: (_) => Validators.dateNaissance(_dateNaissance),
+          onDateSelected: (d) {
+            setState(() => _dateNaissance = d);
+            _saveDraft();
+          },
+        ),
+        const SizedBox(height: 24),
+        Text('Région et commune déclarée', style: AppTextStyles.headlineSmall),
+        const SizedBox(height: 4),
+        Text('Choisissez la région puis la commune',
+            style: AppTextStyles.bodySmall),
+        const SizedBox(height: 16),
+        BackendCommuneSelect(
+          initialCommuneId: _ocrCommuneId,
+          onChanged: (region, commune) => setState(() {
+            _regionName = region;
+            _commune = commune;
+            if (commune != null) _communeError = false;
+          }),
+          errorText:
+              _communeError ? 'Veuillez sélectionner une commune.' : null,
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  // ── ÉTAPE 3 : pièce d'identité ─────────────────────────────
+  Widget _buildCniStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionHeader(
+          title: 'Pièce d\'identité (CNI)',
+          badge: 'Obligatoire',
+          badgeColor: AppColors.statusRed,
+          badgeBg: AppColors.statusRedLight,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Les deux faces de votre CNI sont requises pour valider la demande pour un tiers.',
+          style: AppTextStyles.bodySmall,
+        ),
+        const SizedBox(height: 14),
+        UploadDocumentCard(
+          title: 'CNI — Recto',
+          subtitle: 'Face avant de la carte d\'identité',
+          icon: Icons.credit_card_outlined,
+          filePath: _cniRecto,
+          isRequired: true,
+          onTap: () => _pickDocument('recto'),
+          onRemove:
+              _cniRecto != null ? () => setState(() => _cniRecto = null) : null,
+        ),
+        const SizedBox(height: 12),
+        UploadDocumentCard(
+          title: 'CNI — Verso',
+          subtitle: 'Face arrière de la carte d\'identité',
+          icon: Icons.credit_card_outlined,
+          filePath: _cniVerso,
+          isRequired: true,
+          onTap: () => _pickDocument('verso'),
+          onRemove:
+              _cniVerso != null ? () => setState(() => _cniVerso = null) : null,
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+}
+
+// ── Carte de choix de méthode ──────────────────────────────────
+class _MethodCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _MethodCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? AppColors.primary : AppColors.border,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: selected
+                    ? AppColors.primary.withValues(alpha: 0.12)
+                    : AppColors.background,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon,
+                  color: selected ? AppColors.primary : AppColors.textSecondary,
+                  size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: AppTextStyles.labelMedium),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: AppTextStyles.caption),
+                ],
+              ),
+            ),
+            Icon(
+              selected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
+              color: selected ? AppColors.primary : AppColors.textHint,
+              size: 22,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Bandeau d'information générique ────────────────────────────
+class _InfoBanner extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final Color bg;
+  final String text;
+
+  const _InfoBanner({
+    required this.icon,
+    required this.color,
+    required this.bg,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(text,
+                style: AppTextStyles.caption.copyWith(color: color)),
+          ),
+        ],
       ),
     );
   }
@@ -788,8 +812,8 @@ class _SectionHeader extends StatelessWidget {
           ),
           child: Text(
             badge,
-            style: AppTextStyles.caption.copyWith(
-                color: badgeColor, fontWeight: FontWeight.w600),
+            style: AppTextStyles.caption
+                .copyWith(color: badgeColor, fontWeight: FontWeight.w600),
           ),
         ),
       ],

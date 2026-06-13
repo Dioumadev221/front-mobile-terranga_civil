@@ -37,6 +37,7 @@ class _ResidenceFormScreenState extends ConsumerState<ResidenceFormScreen> {
 
   String? _pieceIdentite; // CNI / passeport
   String? _attestation; // attestation du délégué de quartier
+  String? _copieCni; // copie de la CNI
 
   @override
   void dispose() {
@@ -48,7 +49,8 @@ class _ResidenceFormScreenState extends ConsumerState<ResidenceFormScreen> {
       _nomCtr.text.trim().isNotEmpty &&
       _commune != null &&
       _pieceIdentite != null &&
-      _attestation != null;
+      _attestation != null &&
+      _copieCni != null;
 
   Future<void> _pick(String which) async {
     final path = await DocumentUploadHelper.pick(context);
@@ -56,6 +58,7 @@ class _ResidenceFormScreenState extends ConsumerState<ResidenceFormScreen> {
     setState(() {
       if (which == 'piece') _pieceIdentite = path;
       if (which == 'attestation') _attestation = path;
+      if (which == 'copie_cni') _copieCni = path;
     });
   }
 
@@ -71,6 +74,7 @@ class _ResidenceFormScreenState extends ConsumerState<ResidenceFormScreen> {
             nomComplet: _nomCtr.text.trim(),
             pieceIdentitePath: _pieceIdentite,
             attestationDeleguePath: _attestation,
+            copieCniPath: _copieCni,
           );
       if (!mounted) return;
       // Comme les autres certificats : on passe par le paiement.
@@ -201,6 +205,18 @@ class _ResidenceFormScreenState extends ConsumerState<ResidenceFormScreen> {
                         onTap: () => _pick('attestation'),
                         onRemove: _attestation != null
                             ? () => setState(() => _attestation = null)
+                            : null,
+                      ),
+                      const SizedBox(height: 12),
+                      UploadDocumentCard(
+                        title: 'Copie de la CNI',
+                        subtitle: 'Photocopie lisible de votre CNI',
+                        icon: Icons.badge_outlined,
+                        filePath: _copieCni,
+                        isRequired: true,
+                        onTap: () => _pick('copie_cni'),
+                        onRemove: _copieCni != null
+                            ? () => setState(() => _copieCni = null)
                             : null,
                       ),
                       const SizedBox(height: 24),

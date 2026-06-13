@@ -66,10 +66,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       onTap: () => context.push(AppRoutes.decesForm),
     ),
     _QuickService(
-      icon: Icons.home_work_outlined,
-      label: 'Résidence',
+      icon: Icons.apps_outlined,
+      label: 'Autre',
       color: const Color(0xFF14B8A6),
-      onTap: () => context.push(AppRoutes.residenceForm),
+      onTap: () => context.push(AppRoutes.otherServices),
     ),
   ];
 

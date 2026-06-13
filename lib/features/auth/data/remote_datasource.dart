@@ -61,7 +61,11 @@ class AuthRemoteDatasource {
         'last_name': nom,
         'password': password,
         'password_confirm': password,
-        if (phone != null && phone.isNotEmpty) 'phone': phone,
+        // On envoie toujours `phone` (null si absent). Sinon le backend met
+        // '' par défaut, ce qui viole la contrainte UNIQUE sur phone (un seul
+        // '' possible) → 500 dès la 2e inscription par email. Un null explicite
+        // force un NULL en base (autorisé en plusieurs exemplaires).
+        'phone': (phone != null && phone.isNotEmpty) ? phone : null,
         if (email != null && email.isNotEmpty) 'email': email,
       });
 

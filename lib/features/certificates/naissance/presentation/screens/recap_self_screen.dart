@@ -18,8 +18,9 @@ import '../../../../../shared/models/commune_model.dart';
 import '../../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/remote_datasource.dart';
 
-/// S08A — Formulaire "Pour moi"
-/// Deux options : upload de l'extrait (OCR) OU saisie manuelle
+/// S08A — Formulaire "Pour moi" en assistant multi-étapes.
+/// Étape 1 : choix de la méthode (téléverser un extrait OU remplir le
+/// formulaire). Étape 2 : informations + région/commune déclarée.
 class RecapSelfScreen extends ConsumerStatefulWidget {
   const RecapSelfScreen({super.key});
 
@@ -35,6 +36,11 @@ class _RecapSelfScreenState extends ConsumerState<RecapSelfScreen> {
   BackendCommuneModel? _commune;
   String? _regionName;
   bool _communeError = false;
+
+  // Étape courante : 0 = méthode, 1 = informations.
+  int _step = 0;
+  // Méthode choisie : '' (aucune), 'form' (saisie) ou 'upload' (téléversement).
+  String _method = '';
 
   // Upload extrait (optionnel)
   String? _extraitNaissance;
@@ -79,25 +85,6 @@ class _RecapSelfScreenState extends ConsumerState<RecapSelfScreen> {
       if (annee.isNotEmpty) _anneeCtr.text = annee;
       if (dateStr != null) _dateNaissance = DateTime.tryParse(dateStr);
     });
-    if (registre.isNotEmpty && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(children: [
-            Icon(Icons.restore_outlined, color: Colors.white, size: 16),
-            SizedBox(width: 8),
-            Text('Brouillon restauré'),
-          ]),
-          backgroundColor: AppColors.statusBlue,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 2),
-          action: SnackBarAction(
-            label: 'Effacer',
-            textColor: Colors.white,
-            onPressed: _clearDraft,
-          ),
-        ),
-      );
-    }
   }
 
   Future<void> _saveDraft() async {
@@ -138,7 +125,6 @@ class _RecapSelfScreenState extends ConsumerState<RecapSelfScreen> {
       _extraitNaissance = path;
       _imageTooSmall = false;
     });
-    // Vérification qualité : fichier trop petit → image floue probable
     try {
       final size = await File(path).length();
       if (size < 40000 && mounted) setState(() => _imageTooSmall = true);
@@ -164,14 +150,12 @@ class _RecapSelfScreenState extends ConsumerState<RecapSelfScreen> {
           _registreCtr.text = reg.length > 5 ? reg.substring(0, 5) : reg;
         }
         if (data['date_naissance'] != null) {
-          _dateNaissance =
-              DateTime.tryParse(data['date_naissance'] as String);
+          _dateNaissance = DateTime.tryParse(data['date_naissance'] as String);
         }
         final annee = data['annee_registre'];
         if (annee != null) {
           _anneeCtr.text = annee.toString();
         }
-        // Pré-sélection commune
         _ocrCommuneId = data['commune_id'] as String? ?? '';
         final communeNom = data['commune_nom'] as String? ?? '';
         _ocrMessage = communeNom.isNotEmpty
@@ -194,7 +178,6 @@ class _RecapSelfScreenState extends ConsumerState<RecapSelfScreen> {
       _ocrMessage = null;
       _ocrSuccess = false;
       _imageTooSmall = false;
-      // Vider les champs pré-remplis par l'OCR
       _registreCtr.clear();
       _anneeCtr.clear();
       _dateNaissance = null;
@@ -203,6 +186,20 @@ class _RecapSelfScreenState extends ConsumerState<RecapSelfScreen> {
       _regionName = null;
     });
   }
+
+  // ── Navigation entre étapes ────────────────────────────────
+  bool get _canLeaveStep0 {
+    if (_method == 'form') return true;
+    if (_method == 'upload') return _extraitNaissance != null && !_ocrLoading;
+    return false;
+  }
+
+  void _nextStep() {
+    if (!_canLeaveStep0) return;
+    setState(() => _step = 1);
+  }
+
+  void _backStep() => setState(() => _step = 0);
 
   // ── Navigation vers récap ──────────────────────────────────
   void _goToRecap() {
@@ -264,361 +261,353 @@ class _RecapSelfScreenState extends ConsumerState<RecapSelfScreen> {
         title: const Text('Certificat de naissance'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () => context.pop(),
+          onPressed: () => _step == 0 ? context.pop() : _backStep(),
         ),
       ),
       body: SafeArea(
         child: Column(
           children: [
-            // ── Stepper progression ──────────────────────
             const CertificateStepIndicator(currentStep: CertStep.formulaire),
             const SizedBox(height: 8),
+            // Sous-étape (1/2 ou 2/2)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.statusBlueLight,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text('Étape ${_step + 1} / 2',
+                        style: AppTextStyles.caption.copyWith(
+                            color: AppColors.statusBlue,
+                            fontWeight: FontWeight.w600)),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _step == 0 ? 'Comment procéder ?' : 'Vos informations',
+                    style: AppTextStyles.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Form(
-                  key: _formKey,
-                  onChanged: () {
-                    setState(() {});
-                    _saveDraft();
-                  },
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-
-                      // ══════════════════════════════════════
-                      // SECTION 1 : Upload extrait (optionnel)
-                      // ══════════════════════════════════════
-                      Row(children: [
-                        Text('Extrait de naissance existant',
-                            style: AppTextStyles.headlineSmall),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppColors.statusBlueLight,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text('Optionnel',
-                              style: AppTextStyles.caption.copyWith(
-                                  color: AppColors.statusBlue,
-                                  fontWeight: FontWeight.w600)),
-                        ),
-                      ]),
-                      const SizedBox(height: 8),
-
-                      // Info box
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.statusBlueLight,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                              color: AppColors.statusBlue.withValues(alpha: 0.3)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(children: [
-                              const Icon(Icons.info_outline,
-                                  color: AppColors.statusBlue, size: 16),
-                              const SizedBox(width: 8),
-                              Text('Deux options disponibles :',
-                                  style: AppTextStyles.labelMedium
-                                      .copyWith(color: AppColors.statusBlue)),
-                            ]),
-                            const SizedBox(height: 6),
-                            Text(
-                              '📎 Uploader mon extrait → les champs se remplissent automatiquement\n'
-                              '✏️  Remplir manuellement → ignorez cette section',
-                              style: AppTextStyles.caption
-                                  .copyWith(color: AppColors.statusBlue),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-
-                      UploadDocumentCard(
-                        title: 'Mon extrait de naissance',
-                        subtitle: _ocrLoading
-                            ? 'Extraction en cours...'
-                            : 'Photo ou galerie — pré-remplissage automatique',
-                        icon: Icons.description_outlined,
-                        filePath: _extraitNaissance,
-                        isRequired: false,
-                        isLoading: _ocrLoading,
-                        onTap: _ocrLoading ? () {} : _pickExtrait,
-                        onRemove: (_extraitNaissance != null && !_ocrLoading)
-                            ? _clearExtrait
-                            : null,
-                      ),
-
-                      // ── Avertissement qualité ──────────────
-                      if (_imageTooSmall && !_ocrLoading) ...[
-                        const SizedBox(height: 10),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColors.statusAmberLight,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: AppColors.statusAmber.withValues(alpha: 0.4)),
-                          ),
-                          child: Row(children: [
-                            const Icon(Icons.photo_size_select_large_outlined,
-                                color: AppColors.statusAmber, size: 16),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Image de faible résolution — résultats OCR potentiellement imprécis. '
-                                'Prenez une photo nette et bien éclairée.',
-                                style: AppTextStyles.caption
-                                    .copyWith(color: AppColors.statusAmber),
-                              ),
-                            ),
-                          ]),
-                        ),
-                      ],
-
-                      // ── Feedback OCR ────────────────────────
-                      if (_ocrLoading) ...[
-                        const SizedBox(height: 10),
-                        Row(children: [
-                          const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation(
-                                  AppColors.secondary),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                                'Analyse de l\'extrait en cours...',
-                                style: AppTextStyles.caption
-                                    .copyWith(color: AppColors.secondary)),
-                          ),
-                        ]),
-                      ],
-                      if (_ocrMessage != null && !_ocrLoading) ...[
-                        const SizedBox(height: 10),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: _ocrSuccess
-                                ? AppColors.statusGreenLight
-                                : AppColors.statusAmberLight,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: (_ocrSuccess
-                                      ? AppColors.secondary
-                                      : AppColors.statusAmber)
-                                  .withValues(alpha: 0.4),
-                            ),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                _ocrSuccess
-                                    ? Icons.check_circle_outline
-                                    : Icons.warning_amber_outlined,
-                                size: 16,
-                                color: _ocrSuccess
-                                    ? AppColors.secondary
-                                    : AppColors.statusAmber,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(_ocrMessage!,
-                                    style: AppTextStyles.caption.copyWith(
-                                      color: _ocrSuccess
-                                          ? AppColors.secondary
-                                          : AppColors.statusAmber,
-                                    )),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // ── Bouton Réessayer (échec OCR) ────────
-                        if (!_ocrSuccess && _extraitNaissance != null) ...[
-                          const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: GestureDetector(
-                              onTap: () => _runOcr(_extraitNaissance!),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 9),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.refresh,
-                                        color: Colors.white, size: 16),
-                                    const SizedBox(width: 6),
-                                    Text('Réessayer l\'extraction',
-                                        style: AppTextStyles.caption.copyWith(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600)),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                      const SizedBox(height: 32),
-
-                      // ══════════════════════════════════════
-                      // SECTION 2 : Informations
-                      // ══════════════════════════════════════
-                      Row(children: [
-                        Text('Vos informations',
-                            style: AppTextStyles.headlineMedium),
-                        if (_ocrSuccess) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: AppColors.statusGreenLight,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.auto_fix_high,
-                                    size: 12, color: AppColors.secondary),
-                                const SizedBox(width: 4),
-                                Text('Pré-rempli',
-                                    style: AppTextStyles.caption.copyWith(
-                                        color: AppColors.secondary,
-                                        fontWeight: FontWeight.w600)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ]),
-                      const SizedBox(height: 4),
-                      Text(
-                        _ocrSuccess
-                            ? 'Données extraites — vérifiez et corrigez si nécessaire'
-                            : 'Complétez les informations pour votre certificat',
-                        style: AppTextStyles.bodySmall,
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Nom verrouillé
-                      _LockedField(
-                        label: 'Nom complet',
-                        value: user.nomComplet,
-                        hint: 'Récupéré depuis votre inscription',
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Numéro de registre
-                      AppTextField(
-                        label: 'Numéro de registre',
-                        hint: 'Ex: 12345 (5 chiffres max)',
-                        controller: _registreCtr,
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.next,
-                        maxLength: 5,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(5),
-                        ],
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return 'Le numéro de registre est requis.';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Année de registre (4 chiffres)
-                      AppTextField(
-                        label: 'Année de registre',
-                        hint: 'Ex: 2010',
-                        controller: _anneeCtr,
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.next,
-                        maxLength: 4,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(4),
-                        ],
-                        prefixIcon: const Icon(Icons.event_outlined,
-                            color: AppColors.textSecondary, size: 20),
-                        validator: (v) {
-                          if (v == null || v.trim().length != 4) {
-                            return 'L\'année de registre est requise (4 chiffres).';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Date de naissance
-                      DateTextField(
-                        label: 'Date de naissance',
-                        selectedDate: _dateNaissance,
-                        validator: (_) =>
-                            Validators.dateNaissance(_dateNaissance),
-                        onDateSelected: (d) {
-                          setState(() => _dateNaissance = d);
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                child: _step == 0
+                    ? _buildMethodStep()
+                    : Form(
+                        key: _formKey,
+                        onChanged: () {
+                          setState(() {});
                           _saveDraft();
                         },
+                        child: _buildInfoStep(user.nomComplet),
                       ),
-                      const SizedBox(height: 24),
-
-                      // Région → Commune
-                      Text('Commune déclarée',
-                          style: AppTextStyles.headlineSmall),
-                      const SizedBox(height: 4),
-                      Text(
-                        _ocrSuccess && (_ocrMessage?.contains('suggérée') ?? false)
-                            ? 'Commune suggérée par l\'OCR — sélectionnez dans la liste'
-                            : 'Choisissez votre région puis votre commune',
-                        style: AppTextStyles.bodySmall,
-                      ),
-                      const SizedBox(height: 16),
-                      BackendCommuneSelect(
-                        initialCommuneId: _ocrCommuneId,
-                        onChanged: (region, commune) => setState(() {
-                          _regionName = region;
-                          _commune = commune;
-                          if (commune != null) _communeError = false;
-                        }),
-                        errorText: _communeError
-                            ? 'Veuillez sélectionner une commune.'
-                            : null,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
-                ),
               ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child: PrimaryButton(
-                label: 'Voir le récapitulatif →',
-                onPressed: _goToRecap,
-                isEnabled: _isValid,
-              ),
+              child: _step == 0
+                  ? PrimaryButton(
+                      label: 'Suivant →',
+                      onPressed: _nextStep,
+                      isEnabled: _canLeaveStep0,
+                    )
+                  : PrimaryButton(
+                      label: 'Voir le récapitulatif →',
+                      onPressed: _goToRecap,
+                      isEnabled: _isValid,
+                    ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ── ÉTAPE 1 : choix de la méthode ──────────────────────────
+  Widget _buildMethodStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Deux options disponibles', style: AppTextStyles.headlineMedium),
+        const SizedBox(height: 4),
+        Text('Choisissez comment fournir les informations de votre acte.',
+            style: AppTextStyles.bodySmall),
+        const SizedBox(height: 16),
+
+        _MethodCard(
+          icon: Icons.edit_document,
+          title: 'Remplir le formulaire',
+          subtitle: 'Saisir le registre, l\'année et la commune',
+          selected: _method == 'form',
+          onTap: () => setState(() => _method = 'form'),
+        ),
+        const SizedBox(height: 12),
+        _MethodCard(
+          icon: Icons.upload_file_outlined,
+          title: 'Téléverser un document',
+          subtitle: 'Joindre un extrait déjà en ma possession',
+          selected: _method == 'upload',
+          onTap: () => setState(() => _method = 'upload'),
+        ),
+
+        // Zone d'upload (si "téléverser" choisi)
+        if (_method == 'upload') ...[
+          const SizedBox(height: 20),
+          UploadDocumentCard(
+            title: 'Mon extrait de naissance',
+            subtitle: _ocrLoading
+                ? 'Extraction en cours...'
+                : 'Photo ou galerie — pré-remplissage automatique',
+            icon: Icons.description_outlined,
+            filePath: _extraitNaissance,
+            isRequired: true,
+            isLoading: _ocrLoading,
+            onTap: _ocrLoading ? () {} : _pickExtrait,
+            onRemove: (_extraitNaissance != null && !_ocrLoading)
+                ? _clearExtrait
+                : null,
+          ),
+          if (_imageTooSmall && !_ocrLoading) ...[
+            const SizedBox(height: 10),
+            _InfoBanner(
+              icon: Icons.photo_size_select_large_outlined,
+              color: AppColors.statusAmber,
+              bg: AppColors.statusAmberLight,
+              text:
+                  'Image de faible résolution — l\'extraction peut être imprécise. Prenez une photo nette.',
+            ),
+          ],
+          if (_ocrMessage != null && !_ocrLoading) ...[
+            const SizedBox(height: 10),
+            _InfoBanner(
+              icon: _ocrSuccess
+                  ? Icons.check_circle_outline
+                  : Icons.warning_amber_outlined,
+              color: _ocrSuccess ? AppColors.secondary : AppColors.statusAmber,
+              bg: _ocrSuccess
+                  ? AppColors.statusGreenLight
+                  : AppColors.statusAmberLight,
+              text: _ocrMessage!,
+            ),
+            if (_ocrSuccess) ...[
+              const SizedBox(height: 8),
+              Text('Les champs seront pré-remplis à l\'étape suivante.',
+                  style: AppTextStyles.caption),
+            ],
+          ],
+        ],
+      ],
+    );
+  }
+
+  // ── ÉTAPE 2 : informations + commune ───────────────────────
+  Widget _buildInfoStep(String nomComplet) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_ocrSuccess) ...[
+          _InfoBanner(
+            icon: Icons.auto_fix_high,
+            color: AppColors.secondary,
+            bg: AppColors.statusGreenLight,
+            text: 'Champs pré-remplis depuis votre extrait — vérifiez-les.',
+          ),
+          const SizedBox(height: 16),
+        ],
+
+        _LockedField(
+          label: 'Nom complet',
+          value: nomComplet,
+          hint: 'Récupéré depuis votre inscription',
+        ),
+        const SizedBox(height: 16),
+
+        AppTextField(
+          label: 'Numéro de registre',
+          hint: 'Ex: 12345 (5 chiffres max)',
+          controller: _registreCtr,
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.next,
+          maxLength: 5,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(5),
+          ],
+          validator: (v) {
+            if (v == null || v.trim().isEmpty) {
+              return 'Le numéro de registre est requis.';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+
+        AppTextField(
+          label: 'Année de registre',
+          hint: 'Ex: 2010',
+          controller: _anneeCtr,
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.next,
+          maxLength: 4,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(4),
+          ],
+          prefixIcon: const Icon(Icons.event_outlined,
+              color: AppColors.textSecondary, size: 20),
+          validator: (v) {
+            if (v == null || v.trim().length != 4) {
+              return 'L\'année de registre est requise (4 chiffres).';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+
+        DateTextField(
+          label: 'Date de naissance',
+          selectedDate: _dateNaissance,
+          validator: (_) => Validators.dateNaissance(_dateNaissance),
+          onDateSelected: (d) {
+            setState(() => _dateNaissance = d);
+            _saveDraft();
+          },
+        ),
+        const SizedBox(height: 24),
+
+        Text('Région et commune déclarée', style: AppTextStyles.headlineSmall),
+        const SizedBox(height: 4),
+        Text('Choisissez votre région puis votre commune',
+            style: AppTextStyles.bodySmall),
+        const SizedBox(height: 16),
+        BackendCommuneSelect(
+          initialCommuneId: _ocrCommuneId,
+          onChanged: (region, commune) => setState(() {
+            _regionName = region;
+            _commune = commune;
+            if (commune != null) _communeError = false;
+          }),
+          errorText: _communeError
+              ? 'Veuillez sélectionner une commune.'
+              : null,
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+}
+
+// ── Carte de choix de méthode ──────────────────────────────────
+class _MethodCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _MethodCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? AppColors.primary : AppColors.border,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: selected
+                    ? AppColors.primary.withValues(alpha: 0.12)
+                    : AppColors.background,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon,
+                  color: selected ? AppColors.primary : AppColors.textSecondary,
+                  size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: AppTextStyles.labelMedium),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: AppTextStyles.caption),
+                ],
+              ),
+            ),
+            Icon(
+              selected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
+              color: selected ? AppColors.primary : AppColors.textHint,
+              size: 22,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Bandeau d'information générique ────────────────────────────
+class _InfoBanner extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final Color bg;
+  final String text;
+
+  const _InfoBanner({
+    required this.icon,
+    required this.color,
+    required this.bg,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(text,
+                style: AppTextStyles.caption.copyWith(color: color)),
+          ),
+        ],
       ),
     );
   }
@@ -669,8 +658,7 @@ class _LockedField extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(hint,
-            style: AppTextStyles.caption
-                .copyWith(color: AppColors.textHint)),
+            style: AppTextStyles.caption.copyWith(color: AppColors.textHint)),
       ],
     );
   }
