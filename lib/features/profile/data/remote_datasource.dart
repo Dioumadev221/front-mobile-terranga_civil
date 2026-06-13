@@ -43,13 +43,16 @@ class ProfileRemoteDatasource {
     required String oldPin,
     required String newPin,
   }) async {
-    final res = await client.post('/auth/change-password/', data: {
-      'old_password': oldPin,
-      'new_password': newPin,
+    // Backend : POST /api/users/change_pin/ body {old_pin_hash, new_pin}.
+    // NB : côté backend c'est encore un stub (il renvoie succès sans
+    // persister) — l'endpoint est correct, la persistance reste à faire.
+    final res = await client.post('/users/change_pin/', data: {
+      'old_pin_hash': oldPin,
+      'new_pin': newPin,
     });
     if (res.statusCode != 200) {
       throw ApiException(
-          message: 'Changement de mot de passe échoué',
+          message: 'Changement du code PIN échoué',
           statusCode: res.statusCode);
     }
   }
