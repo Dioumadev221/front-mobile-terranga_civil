@@ -34,6 +34,11 @@ class AssistantState {
 class AssistantNotifier extends StateNotifier<AssistantState> {
   final AssistantRemoteDatasource _ds;
 
+  // Identifiant de session de conversation. Le backend l'enregistre comme
+  // `session_id` (champ non-nullable) : sans lui, le chat renvoie une 500.
+  final String _conversationId =
+      'mobile-${DateTime.now().millisecondsSinceEpoch}';
+
   AssistantNotifier(this._ds) : super(const AssistantState());
 
   void setLanguage(String lang) {
@@ -72,6 +77,7 @@ class AssistantNotifier extends StateNotifier<AssistantState> {
         message: content,
         language: state.language,
         history: history,
+        conversationId: _conversationId,
       );
 
       final assistantMsg = MessageModel.assistant(
