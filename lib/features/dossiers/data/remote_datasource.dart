@@ -225,6 +225,10 @@ class DossiersRemoteDatasource {
       'file': multipart,
     });
     final res = await client.post('/documents/', data: formData);
+    // 409 = doublon strict détecté côté backend (même fichier, même hash
+    // SHA-256 déjà téléversé). La pièce est donc considérée déjà présente :
+    // on ne remonte pas d'échec à l'utilisateur.
+    if (res.statusCode == 409) return;
     if (res.statusCode != 200 && res.statusCode != 201) {
       throw ApiException(
         message: 'Échec de l\'envoi du document ($description)',
