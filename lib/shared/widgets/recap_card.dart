@@ -30,18 +30,18 @@ class RecapCard extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: borderColor ?? AppColors.border),
         boxShadow: [
           BoxShadow(
             color: AppColors.shadow,
-            blurRadius: 24,
-            offset: const Offset(0, 4),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         child: IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,

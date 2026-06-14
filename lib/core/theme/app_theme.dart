@@ -15,12 +15,12 @@ abstract class AppTheme {
         brightness: Brightness.light,
         primary: AppColors.primary,
         onPrimary: AppColors.textOnPrimary,
-        primaryContainer: Color(0xFFE3E9F4),
+        primaryContainer: AppColors.goldLight,
         onPrimaryContainer: AppColors.primary,
-        secondary: AppColors.secondary,
+        secondary: AppColors.success,
         onSecondary: AppColors.textOnPrimary,
-        secondaryContainer: AppColors.goldLight,
-        onSecondaryContainer: AppColors.secondaryDark,
+        secondaryContainer: AppColors.successLight,
+        onSecondaryContainer: AppColors.success,
         error: AppColors.error,
         onError: AppColors.textOnPrimary,
         errorContainer: AppColors.errorLight,
@@ -35,7 +35,7 @@ abstract class AppTheme {
         scrim: AppColors.overlay,
       ),
       scaffoldBackgroundColor: AppColors.background,
-      textTheme: GoogleFonts.ibmPlexSansTextTheme().copyWith(
+      textTheme: GoogleFonts.interTextTheme().copyWith(
         displayLarge: AppTextStyles.displayLarge,
         displayMedium: AppTextStyles.displayMedium,
         headlineLarge: AppTextStyles.headlineLarge,
@@ -134,15 +134,19 @@ abstract class AppTheme {
           borderSide: const BorderSide(color: AppColors.divider, width: 1),
         ),
       ),
-      // FIX 1 : CardThemeData (pas CardTheme)
-      cardTheme: const CardThemeData(
+      // Cartes bordées (look structuré) : radius 12 + bordure ardoise.
+      cardTheme: CardThemeData(
         color: AppColors.surface,
         elevation: 0,
         margin: EdgeInsets.zero,
         clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: AppColors.border),
+        ),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.secondary,
+        backgroundColor: AppColors.success,
         foregroundColor: AppColors.textOnPrimary,
         elevation: 4,
         shape: CircleBorder(),
