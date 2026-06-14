@@ -117,7 +117,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         statusBarBrightness: Brightness.dark,
       ),
       child: Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         top: false,
         child: CustomScrollView(
@@ -403,11 +403,8 @@ class _SectionHeader extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(title,
-              style: const TextStyle(
-                color: Color(0xFF0A1F5C),
-                fontSize: 17,
+              style: AppTextStyles.headlineSmall.copyWith(
                 fontWeight: FontWeight.w700,
-                fontFamily: 'Poppins',
               )),
           if (actionLabel != null)
             GestureDetector(
@@ -455,11 +452,9 @@ class _QuickServiceTile extends StatelessWidget {
             Text(
               service.label,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFF374151),
-                fontSize: 13,
+              style: AppTextStyles.labelMedium.copyWith(
+                color: AppColors.textPrimary,
                 fontWeight: FontWeight.w600,
-                fontFamily: 'Poppins',
               ),
             ),
           ],

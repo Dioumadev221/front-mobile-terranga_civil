@@ -89,7 +89,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final isLoading = ref.watch(authProvider).isLoading;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -160,18 +160,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                Image.asset(Assets.logoTeranga,
-                    width: 160, height: 160, fit: BoxFit.contain),
-                //const SizedBox(height: 8),
+                const SizedBox(height: 14),
+                // Logo encadré (carte blanche + ombre douce, façon lassfrontend)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.shadow,
+                        blurRadius: 24,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Image.asset(Assets.logoTeranga,
+                      width: 116, height: 116, fit: BoxFit.contain),
+                ),
+                const SizedBox(height: 22),
                 Text('Se connecter',
                     textAlign: TextAlign.center,
                     style: AppTextStyles.headlineLarge),
-                //const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 Text(
-                  'Utilisez votre numéro de téléphone ou votre email',
+                  'UTILISEZ VOTRE TÉLÉPHONE OU VOTRE EMAIL',
                   textAlign: TextAlign.center,
-                  style: AppTextStyles.bodySmall,
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: AppColors.textHint,
+                    letterSpacing: 1.2,
+                  ),
                 ),
                 const SizedBox(height: 32),
 
