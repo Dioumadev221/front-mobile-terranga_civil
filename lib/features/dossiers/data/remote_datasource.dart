@@ -175,7 +175,8 @@ class DossiersRemoteDatasource {
     final createRes = await client.post('/dossiers/', data: createPayload);
     if (createRes.statusCode != 200 && createRes.statusCode != 201) {
       throw ApiException(
-        message: 'Erreur lors de la création du dossier',
+        message: _extractError(createRes.data) ??
+            'Erreur lors de la création du dossier',
         statusCode: createRes.statusCode,
       );
     }
@@ -201,6 +202,52 @@ class DossiersRemoteDatasource {
     return dossierId;
   }
 
+  /// Extrait un message lisible depuis la réponse d'erreur DRF standardisée
+  /// (`{success, message, data, errors}`). Privilégie le détail de validation
+  /// (`errors`) au message générique « Requête invalide. », pour que
+  /// l'utilisateur voie la vraie raison (ex. date de décès de plus d'un an).
+  String? _extractError(dynamic data) {
+    if (data is! Map) return null;
+    final errors = data['errors'];
+    if (errors is Map && errors.isNotEmpty) {
+      final first = errors.values.first;
+      if (first is List && first.isNotEmpty) return first.first.toString();
+      if (first is String && first.isNotEmpty) return first;
+    }
+    final msg = data['message'];
+    if (msg is String && msg.isNotEmpty && msg != 'Requête invalide.') {
+      return msg;
+    }
+    return null;
+  }
+
+  /// Construit un nom de fichier sûr **avec une extension valide**.
+  /// Sur web, le chemin est une URL blob sans extension, ce qui fait rejeter
+  /// l'upload par la validation backend. On déduit alors l'extension des
+  /// magic bytes (png/pdf/jpg), défaut `jpg`.
+  String _safeFileName(String path, List<int>? bytes) {
+    final last = path.split(RegExp(r'[\\/]')).last;
+    final hasExt =
+        RegExp(r'\.(jpe?g|png|pdf|webp|heic)$', caseSensitive: false)
+            .hasMatch(last);
+    if (hasExt) return last;
+    String ext = 'jpg';
+    if (bytes != null && bytes.length >= 4) {
+      if (bytes[0] == 0x89 &&
+          bytes[1] == 0x50 &&
+          bytes[2] == 0x4E &&
+          bytes[3] == 0x47) {
+        ext = 'png';
+      } else if (bytes[0] == 0x25 &&
+          bytes[1] == 0x50 &&
+          bytes[2] == 0x44 &&
+          bytes[3] == 0x46) {
+        ext = 'pdf';
+      }
+    }
+    return 'document.$ext';
+  }
+
   /// Téléverse une pièce jointe (ex : CNI recto/verso) liée à un dossier.
   ///
   /// Best-effort : en cas d'échec, l'erreur est journalisée mais
@@ -211,11 +258,14 @@ class DossiersRemoteDatasource {
     required String filePath,
     String description = '',
   }) async {
-    final fileName = filePath.split(RegExp(r'[\\/]')).last;
     // Les octets sont mis en cache au moment de la sélection (web ET natif),
     // ce qui permet `fromBytes` partout. On ne retombe sur `fromFile` que si
     // les octets ne sont pas disponibles (chemin natif venant d'ailleurs).
     final bytes = DocumentUploadHelper.bytesFor(filePath);
+    // Sur web, `filePath` est une URL blob SANS extension → le backend rejette
+    // le fichier (validation d'extension). On garantit donc un nom propre avec
+    // l'extension déduite des magic bytes (jpg/png/pdf), sinon `.jpg`.
+    final fileName = _safeFileName(filePath, bytes);
     final MultipartFile multipart = bytes != null
         ? MultipartFile.fromBytes(bytes, filename: fileName)
         : await MultipartFile.fromFile(filePath, filename: fileName);

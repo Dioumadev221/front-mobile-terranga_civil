@@ -300,6 +300,10 @@ class _DecesFormScreenState extends ConsumerState<DecesFormScreen> {
         DateTextField(
           label: 'Date de décès',
           selectedDate: _dateDeces,
+          // Règle backend : un acte de décès ne peut être établi si la date
+          // remonte à plus d'un an. On borne donc le sélecteur en conséquence.
+          firstDate: DateTime.now().subtract(const Duration(days: 365)),
+          lastDate: DateTime.now(),
           validator: (_) => Validators.dateDeces(_dateDeces),
           onDateSelected: (d) {
             setState(() => _dateDeces = d);
