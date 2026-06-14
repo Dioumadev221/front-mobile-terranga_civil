@@ -112,7 +112,7 @@ class _RecapSelfScreenState extends ConsumerState<RecapSelfScreen> {
 
   bool get _isValid =>
       _registreCtr.text.trim().isNotEmpty &&
-      _registreCtr.text.trim().length <= 5 &&
+      _registreCtr.text.trim().length <= 12 &&
       _anneeCtr.text.trim().length == 4 &&
       _dateNaissance != null &&
       _commune != null;
@@ -147,7 +147,7 @@ class _RecapSelfScreenState extends ConsumerState<RecapSelfScreen> {
         _ocrSuccess = true;
         final reg = data['registre'] as String? ?? '';
         if (reg.isNotEmpty) {
-          _registreCtr.text = reg.length > 5 ? reg.substring(0, 5) : reg;
+          _registreCtr.text = reg.length > 12 ? reg.substring(0, 12) : reg;
         }
         if (data['date_naissance'] != null) {
           _dateNaissance = DateTime.tryParse(data['date_naissance'] as String);
@@ -431,14 +431,14 @@ class _RecapSelfScreenState extends ConsumerState<RecapSelfScreen> {
 
         AppTextField(
           label: 'Numéro de registre',
-          hint: 'Ex: 12345 (5 chiffres max)',
+          hint: 'Ex: 2020-0142',
           controller: _registreCtr,
-          keyboardType: TextInputType.number,
+          keyboardType: TextInputType.text,
           textInputAction: TextInputAction.next,
-          maxLength: 5,
+          maxLength: 12,
           inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(5),
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9A-Za-z/-]')),
+            LengthLimitingTextInputFormatter(12),
           ],
           validator: (v) {
             if (v == null || v.trim().isEmpty) {

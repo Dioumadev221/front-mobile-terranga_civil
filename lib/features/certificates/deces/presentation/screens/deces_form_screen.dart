@@ -316,20 +316,20 @@ class _DecesFormScreenState extends ConsumerState<DecesFormScreen> {
         const SizedBox(height: 16),
         AppTextField(
           label: 'Numéro de registre',
-          hint: 'Ex: 12345',
+          hint: 'Ex: 2023-0015',
           controller: _registreCtr,
-          keyboardType: TextInputType.number,
-          maxLength: 5,
+          keyboardType: TextInputType.text,
+          maxLength: 12,
           inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(5),
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9A-Za-z/-]')),
+            LengthLimitingTextInputFormatter(12),
           ],
           validator: (v) {
             if (v == null || v.trim().isEmpty) {
               return 'Le numéro de registre est requis.';
             }
-            if (v.trim().length > 5) {
-              return 'Maximum 5 chiffres.';
+            if (v.trim().length > 12) {
+              return 'Maximum 12 caractères.';
             }
             return null;
           },

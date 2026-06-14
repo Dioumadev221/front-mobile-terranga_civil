@@ -173,7 +173,7 @@ class _OtherPersonScreenState extends ConsumerState<OtherPersonScreen> {
         }
         final reg = data['registre'] as String? ?? '';
         if (reg.isNotEmpty) {
-          _registreCtr.text = reg.length > 5 ? reg.substring(0, 5) : reg;
+          _registreCtr.text = reg.length > 12 ? reg.substring(0, 12) : reg;
         }
         if (data['date_naissance'] != null) {
           _dateNaissance = DateTime.tryParse(data['date_naissance'] as String);
@@ -228,9 +228,8 @@ class _OtherPersonScreenState extends ConsumerState<OtherPersonScreen> {
         ),
         content: const Text(
           'Le numéro de registre (aussi appelé numéro d\'acte) figure sur l\'extrait '
-          'de naissance, en haut à droite du document, sous la forme d\'un nombre '
-          'à 1–5 chiffres.\n\n'
-          'Exemple : si vous voyez "Acte n° 42 du …", entrez 42.',
+          'de naissance, en haut à droite du document.\n\n'
+          'Exemple : "2020-0142" ou "42".',
         ),
         actions: [
           TextButton(
@@ -471,8 +470,8 @@ class _OtherPersonScreenState extends ConsumerState<OtherPersonScreen> {
         ),
         const SizedBox(height: 16),
         AppTextField(
-          label: 'Numéro de registre (max 5 chiffres)',
-          hint: 'Ex: 12345',
+          label: 'Numéro de registre',
+          hint: 'Ex: 2020-0142',
           suffixIcon: GestureDetector(
             onTap: () => _showTooltipRegistre(context),
             child: const Padding(
@@ -482,12 +481,12 @@ class _OtherPersonScreenState extends ConsumerState<OtherPersonScreen> {
             ),
           ),
           controller: _registreCtr,
-          keyboardType: TextInputType.number,
+          keyboardType: TextInputType.text,
           textInputAction: TextInputAction.next,
-          maxLength: 5,
+          maxLength: 12,
           inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(5),
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9A-Za-z/-]')),
+            LengthLimitingTextInputFormatter(12),
           ],
           validator: (v) {
             if (v == null || v.trim().isEmpty) {
