@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../../core/router/app_router.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
@@ -53,55 +52,6 @@ class _OtherPersonScreenState extends ConsumerState<OtherPersonScreen> {
   bool _ocrSuccess = false;
   bool _imageTooSmall = false;
   String? _ocrCommuneId;
-
-  static const _kNom = 'draft_naissance_other_nom';
-  static const _kRegistre = 'draft_naissance_other_registre';
-  static const _kAnnee = 'draft_naissance_other_annee';
-  static const _kLien = 'draft_naissance_other_lien';
-  static const _kDate = 'draft_naissance_other_date';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadDraft();
-  }
-
-  Future<void> _loadDraft() async {
-    final prefs = await SharedPreferences.getInstance();
-    final nom = prefs.getString(_kNom) ?? '';
-    final registre = prefs.getString(_kRegistre) ?? '';
-    final annee = prefs.getString(_kAnnee) ?? '';
-    final lien = prefs.getString(_kLien);
-    final dateStr = prefs.getString(_kDate);
-    if (!mounted) return;
-    setState(() {
-      if (nom.isNotEmpty) _nomCtr.text = nom;
-      if (registre.isNotEmpty) _registreCtr.text = registre;
-      if (annee.isNotEmpty) _anneeCtr.text = annee;
-      if (lien != null) _lienParente = lien;
-      if (dateStr != null) _dateNaissance = DateTime.tryParse(dateStr);
-    });
-  }
-
-  Future<void> _saveDraft() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kNom, _nomCtr.text.trim());
-    await prefs.setString(_kRegistre, _registreCtr.text.trim());
-    await prefs.setString(_kAnnee, _anneeCtr.text.trim());
-    if (_lienParente != null) await prefs.setString(_kLien, _lienParente!);
-    if (_dateNaissance != null) {
-      await prefs.setString(_kDate, _dateNaissance!.toIso8601String());
-    }
-  }
-
-  Future<void> _clearDraft() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_kNom);
-    await prefs.remove(_kRegistre);
-    await prefs.remove(_kAnnee);
-    await prefs.remove(_kLien);
-    await prefs.remove(_kDate);
-  }
 
   @override
   void dispose() {
@@ -268,7 +218,6 @@ class _OtherPersonScreenState extends ConsumerState<OtherPersonScreen> {
       );
       return;
     }
-    _clearDraft();
     context.push(AppRoutes.naissanceRecapOther, extra: {
       'nom': _nomCtr.text.trim(),
       'registre': _registreCtr.text.trim(),
@@ -333,7 +282,6 @@ class _OtherPersonScreenState extends ConsumerState<OtherPersonScreen> {
                             key: _formKey,
                             onChanged: () {
                               setState(() {});
-                              _saveDraft();
                             },
                             child: _buildInfoStep(),
                           )
@@ -455,7 +403,6 @@ class _OtherPersonScreenState extends ConsumerState<OtherPersonScreen> {
           value: _lienParente,
           onChanged: (v) {
             setState(() => _lienParente = v);
-            _saveDraft();
           },
         ),
         const SizedBox(height: 16),
@@ -523,7 +470,6 @@ class _OtherPersonScreenState extends ConsumerState<OtherPersonScreen> {
           validator: (_) => Validators.dateNaissance(_dateNaissance),
           onDateSelected: (d) {
             setState(() => _dateNaissance = d);
-            _saveDraft();
           },
         ),
         const SizedBox(height: 24),

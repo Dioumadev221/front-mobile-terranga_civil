@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../../core/router/app_router.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
@@ -44,69 +43,6 @@ class _MariageFormScreenState extends ConsumerState<MariageFormScreen> {
   String _typeDoc  = 'piece'; // piece | extrait
   String? _docRecto;
   String? _docVerso;
-
-  // ── Draft ─────────────────────────────────────────────────
-  static const _kRole      = 'draft_mariage_role';
-  static const _kDemandeur = 'draft_mariage_demandeur';
-  static const _kConjoint  = 'draft_mariage_conjoint';
-  static const _kRegistre  = 'draft_mariage_registre';
-  static const _kAnnee     = 'draft_mariage_annee';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadDraft();
-  }
-
-  Future<void> _loadDraft() async {
-    final prefs = await SharedPreferences.getInstance();
-    final role      = prefs.getString(_kRole);
-    final demandeur = prefs.getString(_kDemandeur) ?? '';
-    final conjoint  = prefs.getString(_kConjoint) ?? '';
-    final registre  = prefs.getString(_kRegistre) ?? '';
-    final annee     = prefs.getInt(_kAnnee);
-    if (!mounted) return;
-    setState(() {
-      if (role != null)            _role = role;
-      if (demandeur.isNotEmpty)    _nomDemandeurCtr.text = demandeur;
-      if (conjoint.isNotEmpty)     _nomConjointCtr.text = conjoint;
-      if (registre.isNotEmpty)     _registreCtr.text = registre;
-      if (annee != null)           _anneeMarriage = annee;
-    });
-    if ((demandeur.isNotEmpty || conjoint.isNotEmpty) && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Row(children: [
-          Icon(Icons.restore_outlined, color: Colors.white, size: 16),
-          SizedBox(width: 8),
-          Text('Brouillon restauré'),
-        ]),
-        backgroundColor: AppColors.statusBlue,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-        action: SnackBarAction(
-          label: 'Effacer',
-          textColor: Colors.white,
-          onPressed: _clearDraft,
-        ),
-      ));
-    }
-  }
-
-  Future<void> _saveDraft() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kRole,      _role);
-    await prefs.setString(_kDemandeur, _nomDemandeurCtr.text.trim());
-    await prefs.setString(_kConjoint,  _nomConjointCtr.text.trim());
-    await prefs.setString(_kRegistre,  _registreCtr.text.trim());
-    if (_anneeMarriage != null) await prefs.setInt(_kAnnee, _anneeMarriage!);
-  }
-
-  Future<void> _clearDraft() async {
-    final prefs = await SharedPreferences.getInstance();
-    for (final k in [_kRole, _kDemandeur, _kConjoint, _kRegistre, _kAnnee]) {
-      await prefs.remove(k);
-    }
-  }
 
   @override
   void dispose() {
@@ -171,7 +107,6 @@ class _MariageFormScreenState extends ConsumerState<MariageFormScreen> {
       });
       return;
     }
-    _clearDraft();
     context.push(AppRoutes.mariageRecap, extra: {
       'role':           _role,
       'nom_demandeur':  _nomDemandeurCtr.text.trim(),
@@ -256,7 +191,6 @@ class _MariageFormScreenState extends ConsumerState<MariageFormScreen> {
                         key: _formKey,
                         onChanged: () {
                           setState(() {});
-                          _saveDraft();
                         },
                         child: _buildInfoStep(),
                       )
@@ -304,7 +238,6 @@ class _MariageFormScreenState extends ConsumerState<MariageFormScreen> {
           value: _role,
           onChanged: (v) {
             setState(() => _role = v);
-            _saveDraft();
           },
         ),
         const SizedBox(height: 28),
@@ -339,7 +272,6 @@ class _MariageFormScreenState extends ConsumerState<MariageFormScreen> {
           selectedYear: _anneeMarriage,
           onYearSelected: (y) {
             setState(() => _anneeMarriage = y);
-            _saveDraft();
           },
         ),
         const SizedBox(height: 16),

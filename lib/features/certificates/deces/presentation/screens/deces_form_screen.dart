@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../../core/router/app_router.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
@@ -45,69 +44,6 @@ class _DecesFormScreenState extends ConsumerState<DecesFormScreen> {
   String _typeDoc = 'piece'; // piece | extrait
   String? _docRecto;
   String? _docVerso;
-
-  // ── Draft ────────────────────────────────────────────────
-  static const _kNomDefunt    = 'draft_deces_nom_defunt';
-  static const _kRegistre     = 'draft_deces_registre';
-  static const _kDateDeces    = 'draft_deces_date_deces';
-  static const _kNomDeclarant = 'draft_deces_nom_declarant';
-  static const _kLien         = 'draft_deces_lien';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadDraft();
-  }
-
-  Future<void> _loadDraft() async {
-    final prefs = await SharedPreferences.getInstance();
-    final nomDefunt    = prefs.getString(_kNomDefunt) ?? '';
-    final registre     = prefs.getString(_kRegistre) ?? '';
-    final dateStr      = prefs.getString(_kDateDeces);
-    final nomDeclarant = prefs.getString(_kNomDeclarant) ?? '';
-    final lien         = prefs.getString(_kLien);
-    if (!mounted) return;
-    setState(() {
-      if (nomDefunt.isNotEmpty)    _nomDefuntCtr.text = nomDefunt;
-      if (registre.isNotEmpty)     _registreCtr.text = registre;
-      if (dateStr != null)         _dateDeces = DateTime.tryParse(dateStr);
-      if (nomDeclarant.isNotEmpty) _nomDeclarantCtr.text = nomDeclarant;
-      if (lien != null)            _lienParente = lien;
-    });
-    if ((nomDefunt.isNotEmpty || nomDeclarant.isNotEmpty) && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Row(children: [
-          Icon(Icons.restore_outlined, color: Colors.white, size: 16),
-          SizedBox(width: 8),
-          Text('Brouillon restauré'),
-        ]),
-        backgroundColor: AppColors.statusBlue,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-        action: SnackBarAction(
-          label: 'Effacer',
-          textColor: Colors.white,
-          onPressed: _clearDraft,
-        ),
-      ));
-    }
-  }
-
-  Future<void> _saveDraft() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kNomDefunt,    _nomDefuntCtr.text.trim());
-    await prefs.setString(_kRegistre,     _registreCtr.text.trim());
-    await prefs.setString(_kNomDeclarant, _nomDeclarantCtr.text.trim());
-    if (_dateDeces != null)   await prefs.setString(_kDateDeces, _dateDeces!.toIso8601String());
-    if (_lienParente != null) await prefs.setString(_kLien,      _lienParente!);
-  }
-
-  Future<void> _clearDraft() async {
-    final prefs = await SharedPreferences.getInstance();
-    for (final k in [_kNomDefunt, _kRegistre, _kDateDeces, _kNomDeclarant, _kLien]) {
-      await prefs.remove(k);
-    }
-  }
 
   @override
   void dispose() {
@@ -175,7 +111,6 @@ class _DecesFormScreenState extends ConsumerState<DecesFormScreen> {
       });
       return;
     }
-    _clearDraft();
     context.push(AppRoutes.decesRecap, extra: {
       'nom':           _nomDefuntCtr.text.trim(),
       'registre':      _registreCtr.text.trim().toUpperCase(),
@@ -243,7 +178,6 @@ class _DecesFormScreenState extends ConsumerState<DecesFormScreen> {
                         key: _formKey,
                         onChanged: () {
                           setState(() {});
-                          _saveDraft();
                         },
                         child: _buildInfoStep(),
                       )
@@ -307,7 +241,6 @@ class _DecesFormScreenState extends ConsumerState<DecesFormScreen> {
           validator: (_) => Validators.dateDeces(_dateDeces),
           onDateSelected: (d) {
             setState(() => _dateDeces = d);
-            _saveDraft();
           },
         ),
         const SizedBox(height: 16),
@@ -372,7 +305,6 @@ class _DecesFormScreenState extends ConsumerState<DecesFormScreen> {
           value: _lienParente,
           onChanged: (v) {
             setState(() => _lienParente = v);
-            _saveDraft();
           },
         ),
         const SizedBox(height: 8),

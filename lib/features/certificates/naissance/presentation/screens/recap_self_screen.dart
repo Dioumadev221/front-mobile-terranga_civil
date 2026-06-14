@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/router/app_router.dart';
 import '../../../../../core/theme/app_colors.dart';
@@ -50,14 +49,9 @@ class _RecapSelfScreenState extends ConsumerState<RecapSelfScreen> {
   bool _imageTooSmall = false;
   String? _ocrCommuneId;
 
-  static const _kRegistre = 'draft_naissance_self_registre';
-  static const _kAnnee = 'draft_naissance_self_annee';
-  static const _kDate = 'draft_naissance_self_date';
-
   @override
   void initState() {
     super.initState();
-    _loadDraft();
     _ensureUser();
   }
 
@@ -72,35 +66,6 @@ class _RecapSelfScreenState extends ConsumerState<RecapSelfScreen> {
     } catch (_) {
       if (mounted) context.go(AppRoutes.login);
     }
-  }
-
-  Future<void> _loadDraft() async {
-    final prefs = await SharedPreferences.getInstance();
-    final registre = prefs.getString(_kRegistre) ?? '';
-    final annee = prefs.getString(_kAnnee) ?? '';
-    final dateStr = prefs.getString(_kDate);
-    if (!mounted) return;
-    setState(() {
-      if (registre.isNotEmpty) _registreCtr.text = registre;
-      if (annee.isNotEmpty) _anneeCtr.text = annee;
-      if (dateStr != null) _dateNaissance = DateTime.tryParse(dateStr);
-    });
-  }
-
-  Future<void> _saveDraft() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kRegistre, _registreCtr.text.trim());
-    await prefs.setString(_kAnnee, _anneeCtr.text.trim());
-    if (_dateNaissance != null) {
-      await prefs.setString(_kDate, _dateNaissance!.toIso8601String());
-    }
-  }
-
-  Future<void> _clearDraft() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_kRegistre);
-    await prefs.remove(_kAnnee);
-    await prefs.remove(_kDate);
   }
 
   @override
@@ -210,7 +175,6 @@ class _RecapSelfScreenState extends ConsumerState<RecapSelfScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final user = ref.read(authProvider).user!;
-    _clearDraft();
     context.push(
       AppRoutes.naissanceRecapSelf + '/recap',
       extra: {
@@ -304,7 +268,6 @@ class _RecapSelfScreenState extends ConsumerState<RecapSelfScreen> {
                         key: _formKey,
                         onChanged: () {
                           setState(() {});
-                          _saveDraft();
                         },
                         child: _buildInfoStep(user.nomComplet),
                       ),
@@ -477,7 +440,6 @@ class _RecapSelfScreenState extends ConsumerState<RecapSelfScreen> {
           validator: (_) => Validators.dateNaissance(_dateNaissance),
           onDateSelected: (d) {
             setState(() => _dateNaissance = d);
-            _saveDraft();
           },
         ),
         const SizedBox(height: 24),

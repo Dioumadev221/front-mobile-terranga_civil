@@ -22,7 +22,7 @@ class MainScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      extendBody: false,
+      extendBody: true,
       body: child,
       bottomNavigationBar: Theme(
         data: Theme.of(context).copyWith(
@@ -30,7 +30,7 @@ class MainScaffold extends StatelessWidget {
           highlightColor: Colors.transparent,
         ),
         child: Container(
-          margin: const EdgeInsets.only(left: 20, right: 20, bottom: 8),
+          margin: const EdgeInsets.only(left: 20, right: 20, bottom: 24),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(32),
