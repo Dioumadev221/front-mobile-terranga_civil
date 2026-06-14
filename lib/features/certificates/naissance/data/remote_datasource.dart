@@ -26,9 +26,12 @@ class NaissanceRemoteDatasource {
           ? MultipartFile.fromBytes(bytes, filename: fileName)
           : await MultipartFile.fromFile(imagePath, filename: fileName);
 
+      // NB : on n'envoie PAS `dossier_type`. Le backend déclenche une
+      // vérification de doublon de dossier si ce champ est présent, et renvoie
+      // 400 dès que le citoyen a déjà un dossier naissance en cours — alors
+      // que l'OCR ne fait que lire une image (aucun dossier créé ici).
       final formData = FormData.fromMap({
         'document': multipart,
-        'dossier_type': 'birth_certificate',
       });
 
       final res = await client.post('/ai/ocr/extract/', data: formData);
