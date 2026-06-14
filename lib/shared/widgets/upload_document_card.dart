@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/theme/app_colors.dart';
@@ -146,6 +148,15 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
+Widget _thumbError(BuildContext context, Object error, StackTrace? stack) =>
+    Container(
+      width: 56,
+      height: 56,
+      color: AppColors.border,
+      child: const Icon(Icons.insert_drive_file_outlined,
+          color: AppColors.textSecondary),
+    );
+
 class _FilePreview extends StatelessWidget {
   final String filePath;
   final String title;
@@ -165,22 +176,20 @@ class _FilePreview extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       child: Row(
         children: [
-          // Miniature
+          // Miniature (web : blob via Image.network ; natif : fichier)
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.file(
-              File(filePath),
-              width: 56,
-              height: 56,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                width: 56,
-                height: 56,
-                color: AppColors.border,
-                child: const Icon(Icons.insert_drive_file_outlined,
-                    color: AppColors.textSecondary),
-              ),
-            ),
+            child: kIsWeb
+                ? Image.network(filePath,
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.cover,
+                    errorBuilder: _thumbError)
+                : Image.file(File(filePath),
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.cover,
+                    errorBuilder: _thumbError),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -242,9 +251,26 @@ class _FilePreview extends StatelessWidget {
   }
 }
 
-/// Utilitaire pour ouvrir la caméra ou la galerie
+/// Utilitaire pour ouvrir la caméra ou la galerie.
+///
+/// Les octets du fichier choisi sont mis en cache (clé = chemin renvoyé) au
+/// moment de la sélection, ce qui permet de les téléverser ensuite via
+/// `MultipartFile.fromBytes` aussi bien en **web** (où `XFile.path` est un
+/// blob illisible par `File`) qu'en **natif**.
 class DocumentUploadHelper {
   static final _picker = ImagePicker();
+  static final Map<String, Uint8List> _bytesCache = {};
+
+  /// Octets du fichier précédemment sélectionné (ou null si non disponibles).
+  static Uint8List? bytesFor(String path) => _bytesCache[path];
+
+  static Future<String?> _withBytes(XFile? file) async {
+    if (file == null) return null;
+    try {
+      _bytesCache[file.path] = await file.readAsBytes();
+    } catch (_) {/* on garde quand même le chemin pour le natif */}
+    return file.path;
+  }
 
   static Future<String?> pick(BuildContext context) async {
     return showModalBottomSheet<String>(
@@ -275,7 +301,7 @@ class DocumentUploadHelper {
                     source: ImageSource.camera,
                     imageQuality: 85,
                   );
-                  nav.pop(file?.path);
+                  nav.pop(await _withBytes(file));
                 },
               ),
               ListTile(
@@ -291,7 +317,7 @@ class DocumentUploadHelper {
                     source: ImageSource.gallery,
                     imageQuality: 85,
                   );
-                  nav.pop(file?.path);
+                  nav.pop(await _withBytes(file));
                 },
               ),
             ],

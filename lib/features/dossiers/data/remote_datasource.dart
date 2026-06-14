@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../../../core/network/dio_client.dart';
@@ -7,6 +5,7 @@ import '../../../core/errors/exceptions.dart';
 import '../../../core/mock/mock_config.dart';
 import '../../../core/mock/mock_service.dart';
 import '../../../core/utils/pdf_saver.dart';
+import '../../../shared/widgets/upload_document_card.dart' show DocumentUploadHelper;
 import 'models/dossier_model.dart';
 
 class DossiersRemoteDatasource {
@@ -212,11 +211,18 @@ class DossiersRemoteDatasource {
     required String filePath,
     String description = '',
   }) async {
-    final fileName = filePath.split(Platform.pathSeparator).last;
+    final fileName = filePath.split(RegExp(r'[\\/]')).last;
+    // Les octets sont mis en cache au moment de la sélection (web ET natif),
+    // ce qui permet `fromBytes` partout. On ne retombe sur `fromFile` que si
+    // les octets ne sont pas disponibles (chemin natif venant d'ailleurs).
+    final bytes = DocumentUploadHelper.bytesFor(filePath);
+    final MultipartFile multipart = bytes != null
+        ? MultipartFile.fromBytes(bytes, filename: fileName)
+        : await MultipartFile.fromFile(filePath, filename: fileName);
     final formData = FormData.fromMap({
       'dossier': dossierId,
       'description': description,
-      'file': await MultipartFile.fromFile(filePath, filename: fileName),
+      'file': multipart,
     });
     final res = await client.post('/documents/', data: formData);
     if (res.statusCode != 200 && res.statusCode != 201) {
