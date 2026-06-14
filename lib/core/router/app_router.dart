@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../theme/app_colors.dart';
 import '../../shared/layout/main_scaffold.dart';
 
 // ── Auth screens
@@ -422,7 +423,7 @@ class _ErrorScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1B2A6B),
+                  color: AppColors.primary,
                 ),
               ),
               const SizedBox(height: 8),

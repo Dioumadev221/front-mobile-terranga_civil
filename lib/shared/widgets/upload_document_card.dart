@@ -44,7 +44,7 @@ class UploadDocumentCard extends StatelessWidget {
               : AppColors.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: _hasFile ? AppColors.secondary : AppColors.border,
+            color: _hasFile ? AppColors.success : AppColors.border,
             width: _hasFile ? 2 : 1,
           ),
         ),
@@ -201,11 +201,11 @@ class _FilePreview extends StatelessWidget {
                 Row(
                   children: [
                     const Icon(Icons.check_circle,
-                        color: AppColors.secondary, size: 14),
+                        color: AppColors.success, size: 14),
                     const SizedBox(width: 4),
                     Text('Document ajouté',
                         style: AppTextStyles.caption.copyWith(
-                            color: AppColors.secondary)),
+                            color: AppColors.success)),
                   ],
                 ),
               ],

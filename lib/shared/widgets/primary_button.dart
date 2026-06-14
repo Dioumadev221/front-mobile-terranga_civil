@@ -76,13 +76,13 @@ class _PrimaryButtonState extends State<PrimaryButton>
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
-              gradient: _active ? AppColors.primaryGradient : null,
+              gradient: _active ? AppColors.secondaryGradient : null,
               color: _active ? null : AppColors.buttonDisabledBg,
               borderRadius: BorderRadius.circular(14),
               boxShadow: _active
                   ? [
                       BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.35),
+                        color: AppColors.secondary.withValues(alpha: 0.40),
                         blurRadius: 16,
                         offset: const Offset(0, 6),
                         spreadRadius: -2,
@@ -107,7 +107,7 @@ class _PrimaryButtonState extends State<PrimaryButton>
                               strokeWidth: 2.5,
                               valueColor: AlwaysStoppedAnimation<Color>(
                                 _active
-                                    ? AppColors.secondary
+                                    ? AppColors.primary
                                     : AppColors.buttonDisabledText,
                               ),
                             ),
@@ -120,7 +120,7 @@ class _PrimaryButtonState extends State<PrimaryButton>
                                 Icon(widget.leadingIcon,
                                     size: 20,
                                     color: _active
-                                        ? Colors.white
+                                        ? AppColors.primary
                                         : AppColors.buttonDisabledText),
                                 const SizedBox(width: 8),
                               ],
@@ -128,7 +128,7 @@ class _PrimaryButtonState extends State<PrimaryButton>
                                 widget.label,
                                 style: AppTextStyles.buttonPrimary.copyWith(
                                   color: _active
-                                      ? Colors.white
+                                      ? AppColors.primary
                                       : AppColors.buttonDisabledText,
                                 ),
                               ),
