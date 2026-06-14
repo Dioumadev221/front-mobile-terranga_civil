@@ -70,6 +70,8 @@ class MariageRecapScreen extends ConsumerWidget {
               anneeMarriage:    annee,
               nomEpoux:         formData['nom_epoux'] as String,
               nomEpouse:        formData['nom_epouse'] as String,
+              docRectoPath:     docRecto,
+              docVersoPath:     docVerso,
             );
         if (!context.mounted) return;
         context.push(AppRoutes.payment, extra: {

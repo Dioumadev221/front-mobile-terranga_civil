@@ -299,7 +299,9 @@ class DocumentUploadHelper {
                   final nav = Navigator.of(ctx);
                   final file = await _picker.pickImage(
                     source: ImageSource.camera,
-                    imageQuality: 85,
+                    maxWidth: 1600,
+                    maxHeight: 1600,
+                    imageQuality: 80,
                   );
                   nav.pop(await _withBytes(file));
                 },
@@ -315,7 +317,9 @@ class DocumentUploadHelper {
                   final nav = Navigator.of(ctx);
                   final file = await _picker.pickImage(
                     source: ImageSource.gallery,
-                    imageQuality: 85,
+                    maxWidth: 1600,
+                    maxHeight: 1600,
+                    imageQuality: 80,
                   );
                   nav.pop(await _withBytes(file));
                 },

@@ -27,6 +27,8 @@ class DecesNotifier extends StateNotifier<DecesState> {
     required DateTime dateDeces,
     String nomDeclarant = '',
     String lienParente = '',
+    String? docRectoPath,
+    String? docVersoPath,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
@@ -60,6 +62,17 @@ class DecesNotifier extends StateNotifier<DecesState> {
           'cni_defunt': true,
         },
       });
+
+      // Téléversement best-effort de la pièce d'identité du déclarant.
+      for (final p in [docRectoPath, docVersoPath]) {
+        if (p != null) {
+          try {
+            await _ds.uploadDocument(
+                dossierId: id, filePath: p, description: 'Pièce déclarant');
+          } catch (_) {/* best-effort */}
+        }
+      }
+
       state = state.copyWith(isLoading: false, dossierId: id);
       return id;
     } catch (e) {

@@ -68,6 +68,8 @@ class DecesRecapScreen extends ConsumerWidget {
               registre:     formData['registre'] as String,
               nomDeclarant: formData['nom_declarant'] as String,
               lienParente:  formData['lien_parente'] as String,
+              docRectoPath: docRecto,
+              docVersoPath: docVerso,
             );
         if (!context.mounted) return;
         context.push(AppRoutes.payment, extra: {

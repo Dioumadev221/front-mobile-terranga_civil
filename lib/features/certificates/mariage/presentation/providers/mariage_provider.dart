@@ -26,6 +26,8 @@ class MariageNotifier extends StateNotifier<MariageState> {
     required int anneeMarriage,
     required String nomEpoux,
     required String nomEpouse,
+    String? docRectoPath,
+    String? docVersoPath,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
@@ -43,6 +45,17 @@ class MariageNotifier extends StateNotifier<MariageState> {
           'cni_temoins': true,
         },
       });
+
+      // Téléversement best-effort de la pièce d'identité du demandeur.
+      for (final p in [docRectoPath, docVersoPath]) {
+        if (p != null) {
+          try {
+            await _ds.uploadDocument(
+                dossierId: id, filePath: p, description: 'Pièce demandeur');
+          } catch (_) {/* best-effort */}
+        }
+      }
+
       state = state.copyWith(isLoading: false, dossierId: id);
       return id;
     } catch (e) {
