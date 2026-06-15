@@ -32,7 +32,6 @@ import '../../features/certificates/deces/presentation/screens/deces_recap_scree
 import '../../features/certificates/mariage/presentation/screens/mariage_form_screen.dart';
 import '../../features/certificates/mariage/presentation/screens/mariage_recap_screen.dart';
 import '../../features/certificates/residence/presentation/screens/residence_form_screen.dart';
-import '../../features/home/presentation/screens/other_services_screen.dart';
 
 // ── Payment
 import '../../features/payment/presentation/screens/payment_screen.dart';
@@ -88,9 +87,6 @@ abstract class AppRoutes {
 
   // Résidence
   static const residenceForm = '/certificates/residence/form';
-
-  // Autres services
-  static const otherServices = '/other-services';
 
   // Paiement
   static const payment = '/payment';
@@ -322,15 +318,6 @@ final appRouterProvider = Provider.family<GoRouter, String>((ref, initialRoute) 
         pageBuilder: (context, state) => _slidePage(
           state: state,
           child: const ResidenceFormScreen(),
-        ),
-      ),
-
-      // ── Autres services ─────────────────────────────────────
-      GoRoute(
-        path: AppRoutes.otherServices,
-        pageBuilder: (context, state) => _slidePage(
-          state: state,
-          child: const OtherServicesScreen(),
         ),
       ),
 
