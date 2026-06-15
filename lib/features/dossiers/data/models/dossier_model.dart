@@ -59,6 +59,18 @@ class DossierModel {
     this.fraisFCFA,
   });
 
+  /// Progression calculée depuis le statut UI (affichage uniquement)
+  double get progress {
+    switch (status) {
+      case 'soumis':    return 0.25;
+      case 'en_verification': return 0.5;
+      case 'valide':    return 0.75;
+      case 'pret':      return 1.0;
+      case 'rejete':    return 0.3;
+      default:          return 0.1; // en_cours / draft
+    }
+  }
+
   factory DossierModel.fromJson(Map<String, dynamic> json) {
     final backendType = json['type'] as String? ?? '';
     final backendStatus = json['status'] as String? ?? 'draft';
