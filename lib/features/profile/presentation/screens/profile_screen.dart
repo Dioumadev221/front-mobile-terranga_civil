@@ -23,9 +23,9 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).user;
     final initials = user != null
-        ? AppFormatters.initials(user.nom)
+        ? AppFormatters.initials(user.nomComplet)
         : '?';
-    final nom = user?.nom ?? '—';
+    final nom = user != null ? user.nomComplet : '—';
     final phone = user != null
         ? AppFormatters.phoneNumber(user.phone ?? '')
         : '—';
@@ -33,55 +33,93 @@ class ProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Mon profil'),
-        automaticallyImplyLeading: false,
-      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              // ── Avatar + infos ──────────────────────────────
-              Column(
+              // ── En-tête style prototype : bannière + avatar à cheval ──
+              Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.bottomCenter,
                 children: [
                   Container(
-                    width: 80,
-                    height: 80,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
+                    width: double.infinity,
+                    height: 130,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      gradient: AppColors.primaryGradient,
                     ),
-                    child: Center(
-                      child: Text(
-                        initials,
-                        style: AppTextStyles.headlineLarge.copyWith(
-                          color: AppColors.textOnPrimary,
+                    child: const Padding(
+                      padding: EdgeInsets.only(top: 22, left: 20),
+                      child: Align(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          'Mon Profil',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Text(nom, style: AppTextStyles.headlineMedium),
-                  const SizedBox(height: 4),
-                  Text(phone, style: AppTextStyles.bodySmall),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.statusGreenLight,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      commune,
-                      style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.secondary),
+                  Positioned(
+                    bottom: -40,
+                    child: Container(
+                      width: 90,
+                      height: 90,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 4),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          initials,
+                          style: AppTextStyles.headlineLarge
+                              .copyWith(color: AppColors.primary),
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 50),
+              Text(nom, style: AppTextStyles.headlineMedium),
+              const SizedBox(height: 4),
+              Text(phone, style: AppTextStyles.bodySmall),
+              const SizedBox(height: 12),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.location_on_rounded,
+                        color: AppColors.textSecondary, size: 14),
+                    const SizedBox(width: 4),
+                    Text(
+                      commune,
+                      style: AppTextStyles.labelSmall
+                          .copyWith(color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
 
               // ── Sections ────────────────────────────────────
               _SectionCard(
@@ -182,6 +220,8 @@ class ProfileScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
+      showDragHandle: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -199,6 +239,12 @@ class ProfileScreen extends ConsumerWidget {
                   const Icon(Icons.person_outline, color: AppColors.primary, size: 20),
                   const SizedBox(width: 8),
                   Text('Mes informations', style: AppTextStyles.headlineSmall),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    icon: const Icon(Icons.close_rounded,
+                        color: AppColors.textSecondary),
+                  ),
                 ]),
                 const SizedBox(height: 4),
                 Text(
@@ -348,20 +394,31 @@ class ProfileScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
+      showDragHandle: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => Padding(
         padding: EdgeInsets.fromLTRB(
             24, 24, 24, 24 + MediaQuery.of(ctx).viewInsets.bottom),
-        child: Column(
+        child: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(children: [
               const Icon(Icons.lock_outline, color: AppColors.primary, size: 20),
               const SizedBox(width: 8),
-              Text('Changer le mot de passe', style: AppTextStyles.headlineSmall),
+              Expanded(
+                child: Text('Changer le mot de passe',
+                    style: AppTextStyles.headlineSmall),
+              ),
+              IconButton(
+                onPressed: () => Navigator.pop(ctx),
+                icon: const Icon(Icons.close_rounded,
+                    color: AppColors.textSecondary),
+              ),
             ]),
             const SizedBox(height: 20),
             AppTextField(
@@ -437,6 +494,7 @@ class ProfileScreen extends ConsumerWidget {
             }),
           ],
         ),
+        ),
       ),
     );
   }
@@ -445,6 +503,8 @@ class ProfileScreen extends ConsumerWidget {
       BuildContext context, WidgetRef ref, String current) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
+      showDragHandle: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),

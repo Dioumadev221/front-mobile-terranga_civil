@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_text_styles.dart';
 
+/// Barre de navigation flottante (pill) : 5 items avec le bouton IA « Ndiogoye »
+/// pile au centre.
+///
+/// [currentIndex] suit _shellIndex : 0 = Accueil, 1 = Dossiers, 3 = Documents,
+/// 4 = Profil (2 = bouton IA central, action, jamais "actif").
 class MainScaffold extends StatelessWidget {
   final Widget child;
   final int currentIndex;
@@ -14,173 +18,105 @@ class MainScaffold extends StatelessWidget {
     required this.currentIndex,
   });
 
-  static const _tabs = [
-    _NavTab(
-        label: 'Accueil',
-        icon: Icons.home_outlined,
-        activeIcon: Icons.home_rounded,
-        route: '/home'),
-    _NavTab(
-        label: 'Dossiers',
-        icon: Icons.folder_copy_outlined,
-        activeIcon: Icons.folder_copy,
-        route: '/dossiers'),
-    _NavTab(
-        label: 'Profil',
-        icon: Icons.person_outline,
-        activeIcon: Icons.person_rounded,
-        route: '/profile'),
-  ];
-
-  void _onTabTapped(BuildContext context, int index) {
-    if (index == currentIndex) return;
-    context.go(_tabs[index].route);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
+      extendBody: true,
       body: child,
-      // ── Barre de navigation avec micro central (assistant) ──
-      bottomNavigationBar: _TerangaBottomNav(
-        currentIndex: currentIndex,
-        onTap: (i) => _onTabTapped(context, i),
-        onMic: () => context.push(AppRoutes.agentChat),
-        onAide: () {}, // purement visuel pour l'instant
-      ),
-    );
-  }
-}
-
-class _TerangaBottomNav extends StatelessWidget {
-  final int currentIndex;
-  final void Function(int) onTap;
-  final VoidCallback onMic;
-  final VoidCallback onAide;
-  const _TerangaBottomNav({
-    required this.currentIndex,
-    required this.onTap,
-    required this.onMic,
-    required this.onAide,
-  });
-
-  static const _aideTab = _NavTab(
-    label: 'Aide',
-    icon: Icons.support_agent_outlined,
-    activeIcon: Icons.support_agent,
-    route: '',
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    final tabs = MainScaffold._tabs;
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border(
-          top: BorderSide(color: AppColors.border, width: 1),
+      bottomNavigationBar: Theme(
+        data: Theme.of(context).copyWith(
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 16,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 70,
-          child: Row(
-            children: [
-              // Groupe gauche : Accueil + Dossiers
-              Expanded(
-                flex: 2,
-                child: Row(children: [
-                  Expanded(
-                    child: _NavItem(
-                      tab: tabs[0],
-                      isActive: currentIndex == 0,
-                      onTap: () => onTap(0),
-                    ),
-                  ),
-                  Expanded(
-                    child: _NavItem(
-                      tab: tabs[1],
-                      isActive: currentIndex == 1,
-                      onTap: () => onTap(1),
-                    ),
-                  ),
-                ]),
-              ),
-              // Micro central — assistant vocal Ndiogoye
-              _MicButton(onTap: onMic),
-              // Groupe droit : Aide + Profil
-              Expanded(
-                flex: 2,
-                child: Row(children: [
-                  Expanded(
-                    child: _NavItem(
-                      tab: _aideTab,
-                      isActive: false,
-                      onTap: onAide,
-                    ),
-                  ),
-                  Expanded(
-                    child: _NavItem(
-                      tab: tabs[2],
-                      isActive: currentIndex == 2,
-                      onTap: () => onTap(2),
-                    ),
-                  ),
-                ]),
+        child: Container(
+          margin: const EdgeInsets.only(left: 20, right: 20, bottom: 24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.10),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _NavItem(
+                  label: 'Accueil',
+                  icon: Icons.home_rounded,
+                  isActive: currentIndex == 0,
+                  onTap: () => context.go(AppRoutes.home),
+                ),
+                _NavItem(
+                  label: 'Dossiers',
+                  icon: Icons.folder_rounded,
+                  isActive: currentIndex == 1,
+                  onTap: () => context.go(AppRoutes.dossiers),
+                ),
+                // ── Bouton IA central (pile au milieu des 5 items) ──
+                _NdiogoyeButton(
+                  onTap: () => context.push(AppRoutes.agentChat),
+                ),
+                _NavItem(
+                  label: 'Documents',
+                  icon: Icons.article_rounded,
+                  isActive: currentIndex == 3,
+                  onTap: () => context.go(AppRoutes.documents),
+                ),
+                _NavItem(
+                  label: 'Profil',
+                  icon: Icons.person_rounded,
+                  isActive: currentIndex == 4,
+                  onTap: () => context.go(AppRoutes.profile),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-class _MicButton extends StatelessWidget {
+class _NavItem extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isActive;
   final VoidCallback onTap;
-  const _MicButton({required this.onTap});
+  const _NavItem({
+    required this.label,
+    required this.icon,
+    required this.isActive,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final color = isActive ? AppColors.primary : AppColors.textHint;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: SizedBox(
+        width: 56,
+        height: 56,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: const Icon(Icons.mic_rounded, color: Colors.white, size: 26),
-            ),
-            const SizedBox(height: 2),
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 4),
             Text(
-              'Ndiogoye',
-              style: AppTextStyles.navLabel.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w600,
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 10,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                letterSpacing: -0.2,
               ),
             ),
           ],
@@ -190,60 +126,34 @@ class _MicButton extends StatelessWidget {
   }
 }
 
-class _NavItem extends StatelessWidget {
-  final _NavTab tab;
-  final bool isActive;
+class _NdiogoyeButton extends StatelessWidget {
   final VoidCallback onTap;
-  const _NavItem(
-      {required this.tab, required this.isActive, required this.onTap});
+  const _NdiogoyeButton({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? AppColors.primary : AppColors.textSecondary;
     return GestureDetector(
       onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-            decoration: BoxDecoration(
-              color: isActive
-                  ? AppColors.primary.withValues(alpha: 0.08)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Icon(
-              isActive ? tab.activeIcon : tab.icon,
-              color: color,
-              size: 22,
-            ),
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [AppColors.primary, AppColors.primaryLight],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          const SizedBox(height: 2),
-          Text(
-            tab.label,
-            style: AppTextStyles.navLabel.copyWith(
-              color: color,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
-          ),
-        ],
+          ],
+        ),
+        child: const Icon(Icons.mic_rounded, color: Colors.white, size: 28),
       ),
     );
   }
-}
-
-class _NavTab {
-  final String label;
-  final IconData icon;
-  final IconData activeIcon;
-  final String route;
-  const _NavTab({
-    required this.label,
-    required this.icon,
-    required this.activeIcon,
-    required this.route,
-  });
 }

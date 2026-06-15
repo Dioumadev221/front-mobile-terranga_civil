@@ -89,7 +89,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final isLoading = ref.watch(authProvider).isLoading;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -161,24 +161,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ],
                 ),
                 const SizedBox(height: 14),
-                // Logo encadré (carte blanche + ombre douce, façon lassfrontend)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: AppColors.border),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.shadow,
-                        blurRadius: 24,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Image.asset(Assets.logoTeranga,
-                      width: 116, height: 116, fit: BoxFit.contain),
-                ),
+                // Logo posé directement sur le fond blanc (sans cadre)
+                Image.asset(Assets.logoTeranga,
+                    width: 148, height: 148, fit: BoxFit.contain),
                 const SizedBox(height: 22),
                 Text('Se connecter',
                     textAlign: TextAlign.center,

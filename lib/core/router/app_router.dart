@@ -16,6 +16,7 @@ import '../../features/auth/presentation/screens/register_step4_screen.dart';
 
 // ── Home
 import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/documents/presentation/screens/documents_screen.dart';
 
 // ── Certificates — Naissance
 import '../../features/certificates/naissance/presentation/screens/beneficiary_choice_screen.dart';
@@ -62,6 +63,7 @@ abstract class AppRoutes {
   // Shell (bottom nav)
   static const home = '/home';
   static const dossiers = '/dossiers';
+  static const documents = '/documents';
   static const profile = '/profile';
 
   // Agent IA
@@ -210,6 +212,13 @@ final appRouterProvider = Provider.family<GoRouter, String>((ref, initialRoute) 
                 },
               ),
             ],
+          ),
+          GoRoute(
+            path: AppRoutes.documents,
+            pageBuilder: (context, state) => _noTransitionPage(
+              state: state,
+              child: const DocumentsScreen(),
+            ),
           ),
           GoRoute(
             path: AppRoutes.profile,
@@ -366,7 +375,8 @@ Future<String?> _globalRedirect(BuildContext context, GoRouterState state) async
 // ── Index shell selon la route active ─────────────────────────────────────────
 int _shellIndex(String location) {
   if (location.startsWith('/dossiers')) return 1;
-  if (location.startsWith('/profile')) return 2;
+  if (location.startsWith('/documents')) return 3;
+  if (location.startsWith('/profile')) return 4;
   return 0; // /home par défaut
 }
 
