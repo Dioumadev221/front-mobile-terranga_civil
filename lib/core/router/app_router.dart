@@ -47,9 +47,6 @@ import '../../features/dossiers/presentation/screens/dossier_detail_screen.dart'
 // ── Profile
 import '../../features/profile/presentation/screens/profile_screen.dart';
 
-// ── Documents
-import '../../features/documents/presentation/screens/documents_screen.dart';
-
 /// Noms de routes — utiliser ces constantes partout (jamais de chaînes en dur)
 abstract class AppRoutes {
   // Auth
