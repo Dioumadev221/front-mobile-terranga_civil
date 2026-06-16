@@ -48,6 +48,8 @@ class DossierModel {
   final String? communeNom;
   final String? beneficiaryNom;
   final int? fraisFCFA;
+  final String? agentNom;
+  final String? agentPhone;
 
   const DossierModel({
     required this.id,
@@ -57,6 +59,8 @@ class DossierModel {
     this.communeNom,
     this.beneficiaryNom,
     this.fraisFCFA,
+    this.agentNom,
+    this.agentPhone,
   });
 
   /// Progression calculée depuis le statut UI (affichage uniquement)
@@ -90,6 +94,11 @@ class DossierModel {
       // (beneficiary_nom, frais — voir apps/dossiers/serializers.py).
       beneficiaryNom: json['beneficiary_nom'] as String?,
       fraisFCFA: json['frais'] as int?,
+      // 'agent_name' = champ déjà exposé par DossierListSerializer /
+      // DossierDetailSerializer (assigned_agent.full_name).
+      agentNom: json['agent_name'] as String?,
+      agentPhone: (json['assigned_agent'] as Map<String, dynamic>?)?['phone']
+          as String?,
     );
   }
 }

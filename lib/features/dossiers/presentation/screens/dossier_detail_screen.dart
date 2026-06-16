@@ -1,9 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/status_badge.dart';
 import '../providers/dossiers_provider.dart';
+
+/// Frais officiel par type de démarche (voir [AppConstants]), utilisé en
+/// secours quand le dossier n'a pas de `frais` renseigné côté backend.
+int _officialFeeForType(String type) {
+  switch (type) {
+    case 'naissance':
+      return AppConstants.naissanceFeesFCFA;
+    case 'deces':
+      return AppConstants.decesFeesFCFA;
+    case 'mariage':
+      return AppConstants.mariageFeesFCFA;
+    case 'residence':
+      return AppConstants.residenceFeesFCFA;
+    default:
+      return 0;
+  }
+}
 
 class DossierDetailScreen extends ConsumerStatefulWidget {
   final String dossierId;
@@ -146,6 +164,10 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
         data: (d) {
           final isDone = d.status == 'pret' || d.status == 'valide';
           final isIncomplete = d.status == 'rejete';
+          final fee = (d.fraisFCFA == null || d.fraisFCFA == 0)
+              ? _officialFeeForType(d.type)
+              : d.fraisFCFA!;
+          final feeLabel = fee == 0 ? 'Gratuit' : AppFormatters.amountFCFA(fee);
 
           Color badgeBg;
           Color badgeText;
@@ -175,7 +197,6 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
                         children: [
                           // Navigation
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               GestureDetector(
                                 onTap: () => context.pop(),
@@ -186,13 +207,6 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
                                     Text('Mes dossiers', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
                                   ],
                                 ),
-                              ),
-                              Row(
-                                children: [
-                                  _navBtn(Icons.share),
-                                  const SizedBox(width: 8),
-                                  _navBtn(Icons.more_vert),
-                                ],
                               ),
                             ],
                           ),
@@ -230,9 +244,9 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
                             children: [
                               Expanded(child: _metaCard('72h', 'Durée')),
                               const SizedBox(width: 8),
-                              Expanded(child: _metaCard(d.fraisFCFA == null || d.fraisFCFA == 0 ? 'Gratuit' : '${d.fraisFCFA} F', 'Coût')),
+                              Expanded(child: _metaCard(feeLabel, 'Coût')),
                               const SizedBox(width: 8),
-                              Expanded(child: _metaCard(isDone ? '4/4' : '3/4', 'Étapes')),
+                              Expanded(child: _metaCard(isDone ? '3/3' : '2/3', 'Étapes')),
                             ],
                           ),
                         ],
@@ -260,7 +274,7 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
                                 ]),
                                 Row(children: [
                                   Expanded(child: _infoCell('Mairie', d.communeNom ?? 'N/A', hasBorder: true)),
-                                  Expanded(child: _infoCell('Frais', d.fraisFCFA == null || d.fraisFCFA == 0 ? 'Gratuit' : AppFormatters.amountFCFA(d.fraisFCFA!))),
+                                  Expanded(child: _infoCell('Frais', feeLabel)),
                                 ]),
                                 Row(children: [
                                   Expanded(child: _infoCell('Bénéficiaire', d.beneficiaryNom ?? 'Pour soi-même', hasBorder: true, isLastRow: true)),
@@ -274,33 +288,57 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
                           _sectionCard(
                             icon: Icons.support_agent,
                             title: 'Agent assigné',
-                            comingSoon: true,
                             child: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                               child: Row(
                                 children: [
                                   Container(
                                     width: 48, height: 48,
-                                    decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFF1F5F9), border: Border.all(color: const Color(0xFFE2E8F0), width: 2)),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: d.agentNom != null ? const Color(0xFFEFF6FF) : const Color(0xFFF1F5F9),
+                                      border: Border.all(color: const Color(0xFFE2E8F0), width: 2),
+                                    ),
                                     alignment: Alignment.center,
-                                    child: const Icon(Icons.person_outline, color: Color(0xFF94A3B8), size: 22),
+                                    child: Icon(
+                                      d.agentNom != null ? Icons.support_agent : Icons.person_outline,
+                                      color: d.agentNom != null ? const Color(0xFF1D4ED8) : const Color(0xFF94A3B8),
+                                      size: 22,
+                                    ),
                                   ),
                                   const SizedBox(width: 12),
-                                  const Expanded(
+                                  Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text('Non encore assigné', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 15, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
-                                        SizedBox(height: 2),
-                                        Text('L\'agent sera visible après prise en charge', style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11, fontFamily: 'Poppins')),
+                                        Text(
+                                          d.agentNom ?? 'Non encore assigné',
+                                          style: TextStyle(
+                                            color: d.agentNom != null ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w700,
+                                            fontFamily: 'Poppins',
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          d.agentNom != null ? 'Agent en charge du dossier' : 'L\'agent sera visible après prise en charge',
+                                          style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontFamily: 'Poppins'),
+                                        ),
                                       ],
                                     ),
                                   ),
                                   Row(
                                     children: [
-                                      Container(width: 36, height: 36, decoration: const BoxDecoration(color: Color(0xFFF8FAFC), shape: BoxShape.circle), child: const Icon(Icons.message_outlined, size: 16, color: Color(0xFFCBD5E1))),
+                                      GestureDetector(
+                                        onTap: d.agentNom != null ? _showContactModal : null,
+                                        child: Container(width: 36, height: 36, decoration: const BoxDecoration(color: Color(0xFFF8FAFC), shape: BoxShape.circle), child: Icon(Icons.message_outlined, size: 16, color: d.agentNom != null ? const Color(0xFF1D4ED8) : const Color(0xFFCBD5E1))),
+                                      ),
                                       const SizedBox(width: 8),
-                                      Container(width: 36, height: 36, decoration: const BoxDecoration(color: Color(0xFFF8FAFC), shape: BoxShape.circle), child: const Icon(Icons.phone_outlined, size: 16, color: Color(0xFFCBD5E1))),
+                                      GestureDetector(
+                                        onTap: d.agentPhone != null ? _showContactModal : null,
+                                        child: Container(width: 36, height: 36, decoration: const BoxDecoration(color: Color(0xFFF8FAFC), shape: BoxShape.circle), child: Icon(Icons.phone_outlined, size: 16, color: d.agentPhone != null ? const Color(0xFF16A34A) : const Color(0xFFCBD5E1))),
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -317,8 +355,7 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
                               child: Column(
                                 children: [
                                   _timelineItem(step: 'Dossier soumis', agent: 'Via Teranga Civil · Système', time: AppFormatters.dateShort(d.createdAt), note: 'Dossier enregistré. Confirmation envoyée par SMS.', isOk: true, isLast: false),
-                                  _timelineItem(step: 'Vérification des pièces', agent: 'Agent état civil', time: d.progress >= 0.5 ? AppFormatters.dateShort(d.createdAt) : '-', note: d.progress >= 0.5 ? 'Pièces vérifiées et validées.' : 'En attente de vérification.', isOk: d.progress >= 0.5, isLast: false, isErr: isIncomplete),
-                                  _timelineItem(step: 'Paiement des frais', agent: 'Wave Mobile Money', time: d.progress >= 0.75 ? AppFormatters.dateShort(d.createdAt) : '-', note: d.progress >= 0.75 ? 'Transaction confirmée.' : 'En attente de paiement.', isOk: d.progress >= 0.75, isLast: false),
+                                  _timelineItem(step: 'Vérification des pièces', agent: d.agentNom ?? 'Agent état civil', time: d.progress >= 0.5 ? AppFormatters.dateShort(d.createdAt) : '-', note: d.progress >= 0.5 ? 'Pièces vérifiées et validées.' : 'En attente de vérification.', isOk: d.progress >= 0.5, isLast: false, isErr: isIncomplete),
                                   _timelineItem(step: 'Acte signé et disponible', agent: 'Mairie', time: isDone ? AppFormatters.dateShort(d.createdAt) : '-', note: isDone ? 'Document officiel prêt au téléchargement.' : 'En attente de signature.', isOk: isDone, isLast: true),
                                 ],
                               ),
@@ -433,12 +470,6 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
       ),
     );
   }
-
-  Widget _navBtn(IconData icon) => Container(
-    width: 40, height: 40,
-    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.12), shape: BoxShape.circle),
-    child: Icon(icon, color: Colors.white, size: 18),
-  );
 
   Widget _metaCard(String val, String label) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),

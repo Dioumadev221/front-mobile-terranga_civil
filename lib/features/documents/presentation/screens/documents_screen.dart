@@ -42,12 +42,10 @@ class DocumentsScreen extends ConsumerWidget {
       color: Color(0xFF2563EB),
       desc: 'Naissance, identité',
       items: [
-        _Demarche('Acte de naissance', Icons.edit_document,
-            route: AppRoutes.naissanceBeneficiary),
+        _Demarche('Acte de naissance', Icons.edit_document),
         _Demarche('Extrait de naissance', Icons.file_copy_rounded,
             route: AppRoutes.naissanceBeneficiary),
-        _Demarche('Copie littérale', Icons.file_present_rounded,
-            route: AppRoutes.naissanceBeneficiary),
+        _Demarche('Copie littérale', Icons.file_present_rounded),
         _Demarche('Certificat de non-inscription', Icons.search_off_rounded),
       ],
     ),
@@ -59,8 +57,7 @@ class DocumentsScreen extends ConsumerWidget {
       items: [
         _Demarche('Certificat de mariage', Icons.favorite_border_rounded,
             route: AppRoutes.mariageForm),
-        _Demarche('Certificat de célibat', Icons.person_outline_rounded,
-            route: AppRoutes.mariageForm),
+        _Demarche('Certificat de célibat', Icons.person_outline_rounded),
         _Demarche('Certificat de non-divorce', Icons.link_rounded),
         _Demarche('Certificat de veuvage', Icons.volunteer_activism_rounded),
       ],
@@ -73,8 +70,7 @@ class DocumentsScreen extends ConsumerWidget {
       items: [
         _Demarche('Certificat de décès', Icons.assignment_rounded,
             route: AppRoutes.decesForm),
-        _Demarche("Permis d'inhumer", Icons.health_and_safety_rounded,
-            route: AppRoutes.decesForm),
+        _Demarche("Permis d'inhumer", Icons.health_and_safety_rounded),
         _Demarche('Certificat de non-inscription', Icons.search_off_rounded),
       ],
     ),
@@ -91,7 +87,7 @@ class DocumentsScreen extends ConsumerWidget {
       ],
     ),
     _Famille(
-      name: 'Moralité',
+      name: 'Moralité & papier',
       icon: Icons.verified_user_rounded,
       color: Color(0xFF059669),
       desc: 'Moralité, légalisation',
@@ -142,56 +138,16 @@ class DocumentsScreen extends ConsumerWidget {
   }
 
   void _openFamille(BuildContext context, _Famille f) {
-    showModalBottomSheet(
-      context: context,
-      useRootNavigator: true,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: f.color.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(11),
-                    ),
-                    child: Icon(f.icon, color: f.color, size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(f.name, style: AppTextStyles.headlineSmall),
-                ],
-              ),
-              const SizedBox(height: 16),
-              ...f.items.map((item) => _DemarcheTile(item: item, color: f.color)),
-            ],
-          ),
-        ),
-      ),
-    );
+    context.push(AppRoutes.categoryDemarches, extra: {
+      'category': f.name,
+      'items': f.items
+          .map((item) => {
+                'title': item.title,
+                'icon': item.icon,
+                'route': item.route,
+              })
+          .toList(),
+    });
   }
 
   @override
@@ -368,71 +324,6 @@ class _MostRequestedCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _DemarcheTile extends StatelessWidget {
-  final _Demarche item;
-  final Color color;
-  const _DemarcheTile({required this.item, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    final available = item.route != null;
-    return InkWell(
-      onTap: available
-          ? () {
-              Navigator.of(context).pop();
-              context.push(item.route!);
-            }
-          : null,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: (available ? color : AppColors.textHint)
-                    .withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(item.icon,
-                  size: 18, color: available ? color : AppColors.textHint),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                item.title,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: available
-                      ? AppColors.textPrimary
-                      : AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            if (available)
-              const Icon(Icons.arrow_forward_ios_rounded,
-                  size: 14, color: AppColors.textHint)
-            else
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceElevated,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text('Bientôt',
-                    style: AppTextStyles.labelSmall
-                        .copyWith(color: AppColors.textSecondary)),
-              ),
-          ],
-        ),
       ),
     );
   }
