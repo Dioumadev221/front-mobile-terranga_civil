@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/utils/formatters.dart';
-import '../../../../shared/widgets/notification_sheet.dart';
 import '../../../../shared/widgets/status_badge.dart';
 import '../../data/models/dossier_model.dart';
 import '../providers/dossiers_provider.dart';
@@ -124,7 +123,8 @@ class _DossiersListScreenState extends ConsumerState<DossiersListScreen> {
                                 ],
                               ),
                               _hdrBtn(Icons.notifications_none,
-                                  onTap: () => showNotificationsSheet(context)),
+                                  onTap: () =>
+                                      context.push(AppRoutes.notifications)),
                             ],
                           ),
                           const SizedBox(height: 20),

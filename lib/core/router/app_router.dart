@@ -16,7 +16,11 @@ import '../../features/auth/presentation/screens/register_step4_screen.dart';
 
 // ── Home
 import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/home/presentation/screens/category_demarches_screen.dart';
 import '../../features/documents/presentation/screens/documents_screen.dart';
+
+// ── Notifications
+import '../../features/notifications/presentation/screens/notifications_screen.dart';
 
 // ── Certificates — Naissance
 import '../../features/certificates/naissance/presentation/screens/beneficiary_choice_screen.dart';
@@ -32,7 +36,6 @@ import '../../features/certificates/deces/presentation/screens/deces_recap_scree
 import '../../features/certificates/mariage/presentation/screens/mariage_form_screen.dart';
 import '../../features/certificates/mariage/presentation/screens/mariage_recap_screen.dart';
 import '../../features/certificates/residence/presentation/screens/residence_form_screen.dart';
-import '../../features/home/presentation/screens/other_services_screen.dart';
 
 // ── Payment
 import '../../features/payment/presentation/screens/payment_screen.dart';
@@ -69,6 +72,12 @@ abstract class AppRoutes {
   // Agent IA
   static const agentChat = '/agent-chat';
 
+  // Notifications
+  static const notifications = '/notifications';
+
+  // Démarches par catégorie (page pleine écran)
+  static const categoryDemarches = '/category-demarches';
+
   // Naissance
   static const naissanceBeneficiary = '/certificates/naissance/beneficiary';
   static const naissanceRecapSelf = '/certificates/naissance/recap-self';
@@ -85,9 +94,6 @@ abstract class AppRoutes {
 
   // Résidence
   static const residenceForm = '/certificates/residence/form';
-
-  // Autres services
-  static const otherServices = '/other-services';
 
   // Paiement
   static const payment = '/payment';
@@ -322,15 +328,6 @@ final appRouterProvider = Provider.family<GoRouter, String>((ref, initialRoute) 
         ),
       ),
 
-      // ── Autres services ─────────────────────────────────────
-      GoRoute(
-        path: AppRoutes.otherServices,
-        pageBuilder: (context, state) => _slidePage(
-          state: state,
-          child: const OtherServicesScreen(),
-        ),
-      ),
-
       // ── Paiement ────────────────────────────────────────────
       GoRoute(
         path: AppRoutes.payment,
@@ -360,6 +357,32 @@ final appRouterProvider = Provider.family<GoRouter, String>((ref, initialRoute) 
           state: state,
           child: const AgentChatScreen(),
         ),
+      ),
+
+      // ── Notifications ───────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.notifications,
+        pageBuilder: (context, state) => _slidePage(
+          state: state,
+          child: const NotificationsScreen(),
+        ),
+      ),
+
+      // ── Démarches par catégorie ─────────────────────────────
+      GoRoute(
+        path: AppRoutes.categoryDemarches,
+        pageBuilder: (context, state) {
+          final data = state.extra as Map<String, dynamic>? ?? {};
+          return _slidePage(
+            state: state,
+            child: CategoryDemarchesScreen(
+              category: data['category'] as String? ?? '',
+              items: (data['items'] as List?)
+                      ?.cast<Map<String, dynamic>>() ??
+                  const [],
+            ),
+          );
+        },
       ),
     ],
   );
