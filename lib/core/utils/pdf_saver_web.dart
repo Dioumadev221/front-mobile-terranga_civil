@@ -2,13 +2,20 @@
 import 'dart:html' as html;
 
 /// Web : crée un Blob PDF et déclenche le téléchargement via un lien <a>.
+///
+/// Le lien est **ajouté au DOM** avant le clic (sinon Firefox ne déclenche
+/// rien), puis retiré ; l'URL du blob est révoquée **après un délai** (la
+/// révoquer immédiatement après `click()` annule le téléchargement sur
+/// certains navigateurs).
 Future<String> savePdf(List<int> bytes, String filename) async {
   final blob = html.Blob([bytes], 'application/pdf');
   final url = html.Url.createObjectUrlFromBlob(blob);
-  html.AnchorElement(href: url)
+  final anchor = html.AnchorElement(href: url)
     ..setAttribute('download', filename)
-    ..style.display = 'none'
-    ..click();
-  html.Url.revokeObjectUrl(url);
+    ..style.display = 'none';
+  html.document.body!.append(anchor);
+  anchor.click();
+  anchor.remove();
+  Future.delayed(const Duration(seconds: 2), () => html.Url.revokeObjectUrl(url));
   return filename;
 }

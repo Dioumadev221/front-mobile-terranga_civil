@@ -366,7 +366,9 @@ class _MainActionCardState extends State<_MainActionCard> {
               ),
             ),
             const SizedBox(height: 16),
-            Container(
+            GestureDetector(
+              onTap: () => _showDemarcheSearch(context),
+              child: Container(
               height: 50,
               decoration: BoxDecoration(
                 color: const Color(0xFFF8FAFC),
@@ -423,7 +425,7 @@ class _MainActionCardState extends State<_MainActionCard> {
                   ),
                 ],
               ),
-            ),
+            )),
           ],
         ),
       ),
@@ -1559,581 +1561,124 @@ class _CityHallLocationCard extends StatelessWidget {
   }
 }
 
-
-// ── NDIOGOYE PROACTIF (carrousel) ───────────────────────────────────────
-class _ProactiveAlertCard extends StatefulWidget {
-  const _ProactiveAlertCard();
-
-  @override
-  State<_ProactiveAlertCard> createState() => _ProactiveAlertCardState();
+// ── Recherche de démarche (barre de recherche de l'accueil) ──────────────
+/// Ouvre une feuille de recherche : on tape une démarche (naissance, mariage,
+/// décès, résidence…) et on lance la demande correspondante.
+void _showDemarcheSearch(BuildContext context) async {
+  final route = await showModalBottomSheet<String>(
+    context: context,
+    isScrollControlled: true,
+    useRootNavigator: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => const _DemarcheSearchSheet(),
+  );
+  if (route != null && context.mounted) context.push(route);
 }
 
-class _ProactiveAlertCardState extends State<_ProactiveAlertCard> {
-  int _currentIndex = 0;
-  Timer? _timer;
+class _DemarcheSearchSheet extends StatefulWidget {
+  const _DemarcheSearchSheet();
+  @override
+  State<_DemarcheSearchSheet> createState() => _DemarcheSearchSheetState();
+}
 
-  final List<Map<String, dynamic>> _suggestions = [
-    {
-      'icon': Icons.check_circle_outline_rounded,
-      'color': const Color(0xFF10B981),
-      'bgColor': const Color(0xFFECFDF5),
-      'text':
-          'Votre acte de naissance est déjà disponible. Souhaitez-vous le télécharger ?',
-      'actionText': 'Télécharger',
-      'actionIcon': Icons.download_rounded,
-    },
-    {
-      'icon': Icons.warning_amber_rounded,
-      'color': const Color(0xFFF59E0B),
-      'bgColor': const Color(0xFFFFFBEB),
-      'text': "Pièce manquante : Certificat d'accouchement.",
-      'actionText': 'Ajouter maintenant',
-      'actionIcon': Icons.upload_file_rounded,
-    },
-    {
-      'icon': Icons.lightbulb_outline_rounded,
-      'color': const Color(0xFF3B82F6),
-      'bgColor': const Color(0xFFEFF6FF),
-      'text': 'Vous pouvez désormais demander votre certificat de résidence.',
-      'actionText': 'Demander',
-      'actionIcon': Icons.arrow_forward_rounded,
-    },
+class _DemarcheSearchSheetState extends State<_DemarcheSearchSheet> {
+  final _ctrl = TextEditingController();
+  String _q = '';
+
+  // Démarches disponibles (mêmes routes que les cartes de l'accueil).
+  static const List<Map<String, dynamic>> _all = [
+    {'title': 'Acte de naissance', 'icon': Icons.edit_document, 'route': AppRoutes.naissanceBeneficiary},
+    {'title': 'Extrait de naissance', 'icon': Icons.file_copy_rounded, 'route': AppRoutes.naissanceBeneficiary},
+    {'title': 'Copie littérale (naissance)', 'icon': Icons.file_present_rounded, 'route': AppRoutes.naissanceBeneficiary},
+    {'title': 'Certificat de mariage', 'icon': Icons.favorite_border_rounded, 'route': AppRoutes.mariageForm},
+    {'title': 'Certificat de célibat', 'icon': Icons.file_copy_rounded, 'route': AppRoutes.mariageForm},
+    {'title': 'Certificat de décès', 'icon': Icons.assignment_rounded, 'route': AppRoutes.decesForm},
+    {'title': "Permis d'inhumer", 'icon': Icons.health_and_safety_rounded, 'route': AppRoutes.decesForm},
+    {'title': 'Certificat de résidence', 'icon': Icons.home_outlined, 'route': AppRoutes.residenceForm},
   ];
 
   @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 6), (timer) {
-      if (mounted) {
-        setState(() {
-          _currentIndex = (_currentIndex + 1) % _suggestions.length;
-        });
-      }
-    });
-  }
-
-  @override
   void dispose() {
-    _timer?.cancel();
+    _ctrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentSuggestion = _suggestions[_currentIndex];
-
-    return Container(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    final q = _q.toLowerCase();
+    final results = q.isEmpty
+        ? _all
+        : _all
+            .where((d) => (d['title'] as String).toLowerCase().contains(q))
+            .toList();
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0B285D).withValues(alpha: 0.2),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -20,
-            top: -20,
-            child: Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.05),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.auto_awesome_rounded,
-                            color: Color(0xFFFCD34D), size: 18),
-                        SizedBox(width: 8),
-                        Text(
-                          'Ndiogoye Proactif',
-                          style: TextStyle(
-                            color: Color(0xFFFCD34D),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.0,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: List.generate(_suggestions.length, (index) {
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          margin: const EdgeInsets.only(left: 4),
-                          width: _currentIndex == index ? 16 : 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: _currentIndex == index
-                                ? Colors.white
-                                : Colors.white.withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                        );
-                      }),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 125,
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 500),
-                    transitionBuilder: (child, animation) {
-                      return FadeTransition(
-                        opacity: animation,
-                        child: SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(0.0, 0.2),
-                            end: Offset.zero,
-                          ).animate(animation),
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: Container(
-                      key: ValueKey<int>(_currentIndex),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: currentSuggestion['bgColor'] as Color,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              currentSuggestion['icon'] as IconData,
-                              color: currentSuggestion['color'] as Color,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  currentSuggestion['text'] as String,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    height: 1.5,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                GestureDetector(
-                                  onTap: () => context.go(AppRoutes.dossiers),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 16, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          Colors.white.withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                          color: Colors.white
-                                              .withValues(alpha: 0.3)),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          currentSuggestion['actionText']
-                                              as String,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Icon(
-                                          currentSuggestion['actionIcon']
-                                              as IconData,
-                                          color: Colors.white,
-                                          size: 16,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () => context.go(AppRoutes.dossiers),
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.arrow_forward_ios_rounded,
-                                  color: Colors.white, size: 14),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── RENDEZ-VOUS & AGENDA (statique) ─────────────────────────────────────
-class _AppointmentsSection extends StatelessWidget {
-  const _AppointmentsSection();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Vos rendez-vous',
-              style: TextStyle(
-                color: Color(0xFF0F172A),
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-            TextButton(
-              onPressed: () {},
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF3B82F6),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: const Text(
-                'Prendre RDV',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _ctrl,
+              autofocus: true,
+              onChanged: (v) => setState(() => _q = v.trim()),
+              decoration: InputDecoration(
+                hintText: 'Rechercher une démarche (naissance, mariage…)',
+                prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF3B82F6)),
+                filled: true,
+                fillColor: const Color(0xFFF8FAFC),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
               ),
             ),
+            const SizedBox(height: 12),
+            if (results.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 28),
+                child: Text('Aucune démarche trouvée',
+                    style: TextStyle(color: Color(0xFF94A3B8))),
+              )
+            else
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: results.length,
+                  separatorBuilder: (_, __) =>
+                      const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                  itemBuilder: (_, i) {
+                    final d = results[i];
+                    return ListTile(
+                      leading: Icon(d['icon'] as IconData,
+                          color: const Color(0xFF0B285D)),
+                      title: Text(d['title'] as String,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 14)),
+                      trailing: const Icon(Icons.chevron_right_rounded,
+                          color: Color(0xFF94A3B8)),
+                      onTap: () =>
+                          Navigator.of(context).pop(d['route'] as String),
+                    );
+                  },
+                ),
+              ),
           ],
         ),
-        const SizedBox(height: 16),
-        // Pas d'endpoint backend pour les RDV → état vide (design conservé,
-        // aucune donnée fabriquée).
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
-          ),
-          child: const Column(
-            children: [
-              Icon(Icons.event_busy_rounded,
-                  color: Color(0xFF94A3B8), size: 32),
-              SizedBox(height: 10),
-              Text(
-                'Aucun rendez-vous programmé',
-                style: TextStyle(
-                  color: Color(0xFF64748B),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ── MA MAIRIE LA PLUS PROCHE (statique) ─────────────────────────────────
-class _CityHallLocationCard extends StatelessWidget {
-  const _CityHallLocationCard();
-
-  Widget _buildNewsItem({
-    required String tag,
-    required Color tagColor,
-    required Color tagBg,
-    required String title,
-    required String commune,
-    required String time,
-    required IconData icon,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: tagBg,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        tag.toUpperCase(),
-                        style: TextStyle(
-                          color: tagColor,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        '$commune • $time',
-                        style: const TextStyle(
-                          color: Color(0xFF94A3B8),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Color(0xFF1E293B),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
-            ),
-            child: Icon(icon, color: tagColor, size: 22),
-          ),
-        ],
       ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Ma mairie la plus proche',
-          style: TextStyle(
-            color: Color(0xFF0F172A),
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF0B285D).withValues(alpha: 0.04),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(Icons.account_balance_rounded,
-                        color: Color(0xFF2563EB), size: 24),
-                  ),
-                  const SizedBox(width: 16),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Mairie de Dakar Plateau',
-                          style: TextStyle(
-                            color: Color(0xFF1E293B),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(Icons.directions_walk_rounded,
-                                color: Color(0xFF64748B), size: 14),
-                            SizedBox(width: 4),
-                            Text(
-                              'À 450m (6 min à pied)',
-                              style: TextStyle(
-                                color: Color(0xFF64748B),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(Icons.access_time_rounded,
-                                color: Color(0xFF059669), size: 14),
-                            SizedBox(width: 4),
-                            Text(
-                              'Ouvert - Ferme à 16h30',
-                              style: TextStyle(
-                                color: Color(0xFF059669),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.directions_rounded, size: 18),
-                      label: const Text('Itinéraire'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFEFF6FF),
-                        foregroundColor: const Color(0xFF2563EB),
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.phone_outlined, size: 18),
-                      label: const Text('Appeler'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF64748B),
-                        side: const BorderSide(color: Color(0xFFE2E8F0)),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              const Divider(color: Color(0xFFE2E8F0), height: 1),
-              const SizedBox(height: 20),
-              const Text(
-                'Actualités civiques',
-                style: TextStyle(
-                  color: Color(0xFF0F172A),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.3,
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildNewsItem(
-                tag: 'Alerte',
-                tagColor: const Color(0xFFD97706),
-                tagBg: const Color(0xFFFEF3C7),
-                title:
-                    'Fermeture exceptionnelle du guichet 3 ce vendredi matin.',
-                commune: 'Dakar Plateau',
-                time: 'Il y a 2h',
-                icon: Icons.warning_amber_rounded,
-              ),
-              _buildNewsItem(
-                tag: 'Info',
-                tagColor: const Color(0xFF2563EB),
-                tagBg: const Color(0xFFDBEAFE),
-                title:
-                    'Nouveaux tarifs applicables pour les copies littérales dès lundi.',
-                commune: 'Dakar Plateau',
-                time: 'Hier',
-                icon: Icons.info_outline_rounded,
-              ),
-              _buildNewsItem(
-                tag: 'Événement',
-                tagColor: const Color(0xFF059669),
-                tagBg: const Color(0xFFD1FAE5),
-                title: "Journée de sensibilisation à l'état civil le 15 Juin.",
-                commune: 'Dakar (Toutes)',
-                time: '15 Juin',
-                icon: Icons.event_available_rounded,
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

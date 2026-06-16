@@ -267,7 +267,7 @@ class _DossiersListScreenState extends ConsumerState<DossiersListScreen> {
 // ─────────────────────────────────────────────────────────────────────────────
 // Carte dossier
 // ─────────────────────────────────────────────────────────────────────────────
-class _DossierCard extends StatelessWidget {
+class _DossierCard extends ConsumerWidget {
   final DossierModel dossier;
   const _DossierCard({required this.dossier});
 
@@ -275,8 +275,34 @@ class _DossierCard extends StatelessWidget {
   bool get _isIncomplete => dossier.status == 'rejete';
   bool get _isEnCours => !_isDone && !_isIncomplete;
 
+  /// Télécharge le certificat PDF du dossier (web/natif via downloadCertificate).
+  Future<void> _download(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(const SnackBar(
+      content: Text('Téléchargement en cours…'),
+      duration: Duration(seconds: 1),
+    ));
+    try {
+      final path =
+          await ref.read(downloadCertificateProvider(dossier.id).future);
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(
+          content: Text('Certificat téléchargé : $path'),
+          backgroundColor: const Color(0xFF10B981),
+        ));
+    } catch (_) {
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(const SnackBar(
+          content: Text('Échec du téléchargement.'),
+          backgroundColor: Color(0xFFEF4444),
+        ));
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // Couleurs selon statut
     final Color borderColor;
     final Color badgeBg;
@@ -417,7 +443,13 @@ class _DossierCard extends StatelessWidget {
             child: Row(
               children: [
                 if (_isDone) ...[
-                  Expanded(child: _actionBtn('Télécharger', Icons.download, null, Colors.white, useGradient: true)),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => _download(context, ref),
+                      child: _actionBtn('Télécharger', Icons.download, null,
+                          Colors.white, useGradient: true),
+                    ),
+                  ),
                 ],
                 if (_isIncomplete) ...[
                   Expanded(child: _actionBtn('Supprimer', Icons.delete_outline, Colors.white, const Color(0xFF475569), border: const Color(0xFFE2E8F0))),
