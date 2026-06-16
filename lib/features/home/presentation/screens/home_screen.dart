@@ -367,7 +367,7 @@ class _MainActionCardState extends State<_MainActionCard> {
             ),
             const SizedBox(height: 16),
             GestureDetector(
-              onTap: () => context.push(AppRoutes.agentChat),
+              onTap: () => _showDemarcheSearch(context),
               child: Container(
               height: 50,
               decoration: BoxDecoration(
@@ -1557,6 +1557,128 @@ class _CityHallLocationCard extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ── Recherche de démarche (barre de recherche de l'accueil) ──────────────
+/// Ouvre une feuille de recherche : on tape une démarche (naissance, mariage,
+/// décès, résidence…) et on lance la demande correspondante.
+void _showDemarcheSearch(BuildContext context) async {
+  final route = await showModalBottomSheet<String>(
+    context: context,
+    isScrollControlled: true,
+    useRootNavigator: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => const _DemarcheSearchSheet(),
+  );
+  if (route != null && context.mounted) context.push(route);
+}
+
+class _DemarcheSearchSheet extends StatefulWidget {
+  const _DemarcheSearchSheet();
+  @override
+  State<_DemarcheSearchSheet> createState() => _DemarcheSearchSheetState();
+}
+
+class _DemarcheSearchSheetState extends State<_DemarcheSearchSheet> {
+  final _ctrl = TextEditingController();
+  String _q = '';
+
+  // Démarches disponibles (mêmes routes que les cartes de l'accueil).
+  static const List<Map<String, dynamic>> _all = [
+    {'title': 'Acte de naissance', 'icon': Icons.edit_document, 'route': AppRoutes.naissanceBeneficiary},
+    {'title': 'Extrait de naissance', 'icon': Icons.file_copy_rounded, 'route': AppRoutes.naissanceBeneficiary},
+    {'title': 'Copie littérale (naissance)', 'icon': Icons.file_present_rounded, 'route': AppRoutes.naissanceBeneficiary},
+    {'title': 'Certificat de mariage', 'icon': Icons.favorite_border_rounded, 'route': AppRoutes.mariageForm},
+    {'title': 'Certificat de célibat', 'icon': Icons.file_copy_rounded, 'route': AppRoutes.mariageForm},
+    {'title': 'Certificat de décès', 'icon': Icons.assignment_rounded, 'route': AppRoutes.decesForm},
+    {'title': "Permis d'inhumer", 'icon': Icons.health_and_safety_rounded, 'route': AppRoutes.decesForm},
+    {'title': 'Certificat de résidence', 'icon': Icons.home_outlined, 'route': AppRoutes.residenceForm},
+  ];
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final q = _q.toLowerCase();
+    final results = q.isEmpty
+        ? _all
+        : _all
+            .where((d) => (d['title'] as String).toLowerCase().contains(q))
+            .toList();
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _ctrl,
+              autofocus: true,
+              onChanged: (v) => setState(() => _q = v.trim()),
+              decoration: InputDecoration(
+                hintText: 'Rechercher une démarche (naissance, mariage…)',
+                prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF3B82F6)),
+                filled: true,
+                fillColor: const Color(0xFFF8FAFC),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (results.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 28),
+                child: Text('Aucune démarche trouvée',
+                    style: TextStyle(color: Color(0xFF94A3B8))),
+              )
+            else
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: results.length,
+                  separatorBuilder: (_, __) =>
+                      const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                  itemBuilder: (_, i) {
+                    final d = results[i];
+                    return ListTile(
+                      leading: Icon(d['icon'] as IconData,
+                          color: const Color(0xFF0B285D)),
+                      title: Text(d['title'] as String,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 14)),
+                      trailing: const Icon(Icons.chevron_right_rounded,
+                          color: Color(0xFF94A3B8)),
+                      onTap: () =>
+                          Navigator.of(context).pop(d['route'] as String),
+                    );
+                  },
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
