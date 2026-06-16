@@ -366,7 +366,9 @@ class _MainActionCardState extends State<_MainActionCard> {
               ),
             ),
             const SizedBox(height: 16),
-            Container(
+            GestureDetector(
+              onTap: () => context.push(AppRoutes.agentChat),
+              child: Container(
               height: 50,
               decoration: BoxDecoration(
                 color: const Color(0xFFF8FAFC),
@@ -423,7 +425,7 @@ class _MainActionCardState extends State<_MainActionCard> {
                   ),
                 ],
               ),
-            ),
+            )),
           ],
         ),
       ),
