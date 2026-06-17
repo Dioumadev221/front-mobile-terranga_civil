@@ -122,9 +122,17 @@ class _DossiersListScreenState extends ConsumerState<DossiersListScreen> {
                                   ),
                                 ],
                               ),
-                              _hdrBtn(Icons.notifications_none,
-                                  onTap: () =>
-                                      context.push(AppRoutes.notifications)),
+                              Row(
+                                children: [
+                                  _hdrBtn(Icons.event_rounded,
+                                      onTap: () => context
+                                          .push(AppRoutes.appointments)),
+                                  const SizedBox(width: 10),
+                                  _hdrBtn(Icons.notifications_none,
+                                      onTap: () => context
+                                          .push(AppRoutes.notifications)),
+                                ],
+                              ),
                             ],
                           ),
                           const SizedBox(height: 20),

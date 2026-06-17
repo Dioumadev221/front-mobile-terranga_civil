@@ -48,6 +48,7 @@ import '../../features/assistant/presentation/screens/agent_chat_screen.dart';
 // ── Dossiers
 import '../../features/dossiers/presentation/screens/dossiers_list_screen.dart';
 import '../../features/dossiers/presentation/screens/dossier_detail_screen.dart';
+import '../../features/appointments/presentation/screens/appointments_screen.dart';
 
 // ── Profile
 import '../../features/profile/presentation/screens/profile_screen.dart';
@@ -108,6 +109,9 @@ abstract class AppRoutes {
   // Dossier détail
   static const dossierDetail = '/dossiers/:id';
   static String dossierDetailPath(String id) => '/dossiers/$id';
+
+  // Rendez-vous
+  static const appointments = '/appointments';
 }
 
 /// Provider du router — consommé dans MaterialApp.router
@@ -376,6 +380,18 @@ final appRouterProvider = Provider.family<GoRouter, String>((ref, initialRoute) 
           return _slidePage(
             state: state,
             child: PaymentSuccessScreen(dossierId: dossierId),
+          );
+        },
+      ),
+
+      // ── Rendez-vous ─────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.appointments,
+        pageBuilder: (context, state) {
+          final dossierId = state.extra as String?;
+          return _slidePage(
+            state: state,
+            child: AppointmentsScreen(preselectedDossierId: dossierId),
           );
         },
       ),

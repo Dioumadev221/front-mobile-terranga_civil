@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/status_badge.dart';
 import '../providers/dossiers_provider.dart';
@@ -428,6 +429,35 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
                                     ),
                                   ),
                                 ],
+                              ),
+                              const SizedBox(height: 10),
+                              // Prendre rendez-vous (dossier pré-sélectionné)
+                              GestureDetector(
+                                onTap: () => context.push(
+                                    AppRoutes.appointments,
+                                    extra: d.id),
+                                child: Container(
+                                  width: double.infinity,
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                      color: const Color(0xFFEFF6FF),
+                                      borderRadius: BorderRadius.circular(12)),
+                                  alignment: Alignment.center,
+                                  child: const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.event_rounded,
+                                          color: Color(0xFF1D4ED8), size: 18),
+                                      SizedBox(width: 8),
+                                      Text('Prendre un rendez-vous',
+                                          style: TextStyle(
+                                              color: Color(0xFF1D4ED8),
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w700,
+                                              fontFamily: 'Poppins')),
+                                    ],
+                                  ),
+                                ),
                               ),
                               const SizedBox(height: 10),
                               if (isIncomplete)

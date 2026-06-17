@@ -75,15 +75,20 @@ class DocumentsScreen extends ConsumerWidget {
       ],
     ),
     _Famille(
-      name: 'Logement',
+      name: 'Logement & Foncier',
       icon: Icons.home_work_rounded,
       color: Color(0xFFC026D3),
-      desc: 'Résidence, permis',
+      desc: 'Résidence, terrain, permis',
       items: [
         _Demarche('Certificat de résidence', Icons.home_outlined,
             route: AppRoutes.residenceForm),
+        _Demarche('Régularisation foncière', Icons.real_estate_agent_rounded,
+            route: AppRoutes.foncierRegularisation),
+        _Demarche('Autorisation de construire', Icons.architecture_rounded,
+            route: AppRoutes.foncierAutorisation),
+        _Demarche('Mutation de parcelle', Icons.swap_horiz_rounded,
+            route: AppRoutes.foncierMutation),
         _Demarche("Permis d'occuper", Icons.vpn_key_outlined),
-        _Demarche('Autorisation de construire', Icons.architecture_rounded),
       ],
     ),
     _Famille(
