@@ -538,12 +538,27 @@ class _QuickActionsGrid extends StatelessWidget {
                 const Color(0xFFFDF4FF),
                 const Color(0xFFC026D3),
                 onTap: () => context.push(AppRoutes.categoryDemarches, extra: {
-                  'category': 'Logement',
+                  'category': 'Logement & Foncier',
                   'items': [
                     {
                       'title': 'Certificat de résidence',
                       'icon': Icons.home_outlined,
                       'route': AppRoutes.residenceForm,
+                    },
+                    {
+                      'title': 'Demande de régularisation',
+                      'icon': Icons.assignment_outlined,
+                      'route': AppRoutes.foncierRegularisation,
+                    },
+                    {
+                      'title': 'Autorisation de construire',
+                      'icon': Icons.architecture_outlined,
+                      'route': AppRoutes.foncierAutorisation,
+                    },
+                    {
+                      'title': 'Mutation de parcelle',
+                      'icon': Icons.swap_horiz_rounded,
+                      'route': AppRoutes.foncierMutation,
                     },
                   ],
                 }),
@@ -1582,6 +1597,9 @@ class _DemarcheSearchSheetState extends State<_DemarcheSearchSheet> {
     {'title': 'Certificat de mariage', 'icon': Icons.favorite_border_rounded, 'route': AppRoutes.mariageForm},
     {'title': 'Certificat de décès', 'icon': Icons.assignment_rounded, 'route': AppRoutes.decesForm},
     {'title': 'Certificat de résidence', 'icon': Icons.home_outlined, 'route': AppRoutes.residenceForm},
+    {'title': 'Demande de régularisation (foncier)', 'icon': Icons.assignment_outlined, 'route': AppRoutes.foncierRegularisation},
+    {'title': 'Autorisation de construire', 'icon': Icons.architecture_outlined, 'route': AppRoutes.foncierAutorisation},
+    {'title': 'Mutation de parcelle', 'icon': Icons.swap_horiz_rounded, 'route': AppRoutes.foncierMutation},
   ];
 
   @override

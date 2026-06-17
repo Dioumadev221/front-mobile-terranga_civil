@@ -57,6 +57,9 @@ abstract class AppConstants {
   static const int decesFeesFCFA = 500;
   static const int mariageFeesFCFA = 1000;
   static const int residenceFeesFCFA = 1000;
+  // Demandes foncières (récépissé). Mutation : 1 000 F/m² — le montant exact
+  // est confirmé par la mairie au traitement.
+  static const int foncierFeesFCFA = 1000;
 
   // ── Délais estimés (jours ouvrés) ────────────────────────────────────────
   static const int naissanceDelayDays = 3;

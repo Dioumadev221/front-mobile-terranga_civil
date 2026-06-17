@@ -92,7 +92,16 @@ class DossiersRemoteDatasource {
   ///   (optionnels) : transmis tels quels.
   ///
   /// Retourne l'identifiant du dossier créé.
-  Future<String> submitCertificate(Map<String, dynamic> payload) async {
+  /// Crée le dossier puis le soumet.
+  ///
+  /// [autoSubmit] : si `false`, le dossier est seulement créé (statut
+  /// brouillon) et l'id renvoyé — utile quand des pièces doivent être
+  /// téléversées AVANT la soumission (ex. demandes foncières, dont le backend
+  /// exige les justificatifs avant `submit`). Appeler ensuite [submitDossier].
+  Future<String> submitCertificate(
+    Map<String, dynamic> payload, {
+    bool autoSubmit = true,
+  }) async {
     final uiType = payload['type'] as String? ?? '';
     final backendType = kTypeUiToBackend[uiType] ?? uiType;
 
@@ -191,15 +200,27 @@ class DossiersRemoteDatasource {
     }
 
     // 2) Soumission du dossier (passage au statut "soumis").
-    final submitRes = await client.post('/dossiers/$dossierId/submit/');
-    if (submitRes.statusCode != 200) {
-      throw ApiException(
-        message: 'Erreur lors de la soumission du dossier',
-        statusCode: submitRes.statusCode,
-      );
+    // Sautée si autoSubmit=false (le dossier reste en brouillon, le temps de
+    // téléverser les pièces, puis on appellera submitDossier).
+    if (autoSubmit) {
+      await submitDossier(dossierId);
     }
 
     return dossierId;
+  }
+
+  /// Soumet un dossier déjà créé (passage au statut « soumis »).
+  /// Remonte le message backend en cas d'échec (ex. pièces manquantes pour
+  /// les demandes foncières).
+  Future<void> submitDossier(String dossierId) async {
+    final submitRes = await client.post('/dossiers/$dossierId/submit/');
+    if (submitRes.statusCode != 200) {
+      throw ApiException(
+        message: _extractError(submitRes.data) ??
+            'Erreur lors de la soumission du dossier',
+        statusCode: submitRes.statusCode,
+      );
+    }
   }
 
   /// Extrait un message lisible depuis la réponse d'erreur DRF standardisée

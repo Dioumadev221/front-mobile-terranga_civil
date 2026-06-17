@@ -36,6 +36,7 @@ import '../../features/certificates/deces/presentation/screens/deces_recap_scree
 import '../../features/certificates/mariage/presentation/screens/mariage_form_screen.dart';
 import '../../features/certificates/mariage/presentation/screens/mariage_recap_screen.dart';
 import '../../features/certificates/residence/presentation/screens/residence_form_screen.dart';
+import '../../features/certificates/foncier/presentation/screens/foncier_form_screen.dart';
 
 // ── Payment
 import '../../features/payment/presentation/screens/payment_screen.dart';
@@ -94,6 +95,11 @@ abstract class AppRoutes {
 
   // Résidence
   static const residenceForm = '/certificates/residence/form';
+
+  // Foncier (récépissé) — une route par type
+  static const foncierRegularisation = '/certificates/foncier/regularisation';
+  static const foncierAutorisation = '/certificates/foncier/autorisation';
+  static const foncierMutation = '/certificates/foncier/mutation';
 
   // Paiement
   static const payment = '/payment';
@@ -325,6 +331,30 @@ final appRouterProvider = Provider.family<GoRouter, String>((ref, initialRoute) 
         pageBuilder: (context, state) => _slidePage(
           state: state,
           child: const ResidenceFormScreen(),
+        ),
+      ),
+
+      // ── Demandes foncières (récépissé) ──────────────────────
+      GoRoute(
+        path: AppRoutes.foncierRegularisation,
+        pageBuilder: (context, state) => _slidePage(
+          state: state,
+          child: const FoncierFormScreen(config: FoncierConfig.regularisation),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.foncierAutorisation,
+        pageBuilder: (context, state) => _slidePage(
+          state: state,
+          child: const FoncierFormScreen(
+              config: FoncierConfig.autorisationConstruire),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.foncierMutation,
+        pageBuilder: (context, state) => _slidePage(
+          state: state,
+          child: const FoncierFormScreen(config: FoncierConfig.mutationParcelle),
         ),
       ),
 
