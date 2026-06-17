@@ -272,6 +272,28 @@ class DocumentUploadHelper {
     return file.path;
   }
 
+  /// Sélection directe depuis la galerie (sans feuille de choix).
+  static Future<String?> pickFromGallery(BuildContext context) async {
+    final file = await _picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1600,
+      maxHeight: 1600,
+      imageQuality: 80,
+    );
+    return _withBytes(file);
+  }
+
+  /// Prise de photo directe via l'appareil.
+  static Future<String?> pickFromCamera(BuildContext context) async {
+    final file = await _picker.pickImage(
+      source: ImageSource.camera,
+      maxWidth: 1600,
+      maxHeight: 1600,
+      imageQuality: 80,
+    );
+    return _withBytes(file);
+  }
+
   static Future<String?> pick(BuildContext context) async {
     return showModalBottomSheet<String>(
       context: context,

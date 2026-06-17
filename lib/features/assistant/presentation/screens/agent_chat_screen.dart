@@ -68,12 +68,21 @@ class _AgentChatScreenState extends ConsumerState<AgentChatScreen> {
     _scrollToBottom();
   }
 
-  /// Joindre une photo/document : Ndiogoye le lit (vision via image_base64).
-  Future<void> _sendImage() async {
-    final path = await DocumentUploadHelper.pick(context);
+  /// Envoie une image à Ndiogoye (vision via image_base64).
+  Future<void> _sendImage(String? path) async {
     if (path == null) return;
     await ref.read(assistantProvider.notifier).sendMessage('', imagePath: path);
     _scrollToBottom();
+  }
+
+  /// « + » : importer un document existant depuis la galerie.
+  Future<void> _uploadDocument() async {
+    _sendImage(await DocumentUploadHelper.pickFromGallery(context));
+  }
+
+  /// 📷 : prendre une photo d'un document.
+  Future<void> _takePhoto() async {
+    _sendImage(await DocumentUploadHelper.pickFromCamera(context));
   }
 
   /// Dictée vocale : démarre/arrête l'écoute et écrit le texte reconnu.
@@ -268,7 +277,8 @@ class _AgentChatScreenState extends ConsumerState<AgentChatScreen> {
               isListening: _isListening,
               onSend: _send,
               onMic: _toggleMic,
-              onAttach: _sendImage,
+              onUpload: _uploadDocument,
+              onCamera: _takePhoto,
             ),
           ],
         ),
@@ -722,7 +732,8 @@ class _InputBar extends StatelessWidget {
   final bool isListening;
   final void Function(String) onSend;
   final VoidCallback onMic;
-  final VoidCallback onAttach;
+  final VoidCallback onUpload; // « + » : importer un document (galerie)
+  final VoidCallback onCamera; // 📷 : prendre une photo
 
   const _InputBar({
     required this.controller,
@@ -730,7 +741,8 @@ class _InputBar extends StatelessWidget {
     required this.isListening,
     required this.onSend,
     required this.onMic,
-    required this.onAttach,
+    required this.onUpload,
+    required this.onCamera,
   });
 
   @override
@@ -742,10 +754,10 @@ class _InputBar extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // « + » : joindre une photo/document (Ndiogoye le lit via la vision)
+          // « + » : importer un document existant (galerie)
           _RoundIcon(
             icon: Icons.add_rounded,
-            onTap: onAttach,
+            onTap: onUpload,
             iconColor: const Color(0xFF1B4A9C),
             bg: const Color(0xFFEFF3FA),
             size: 44,
@@ -780,10 +792,10 @@ class _InputBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
-          // Caméra : raccourci pour photographier un document
+          // 📷 : prendre une photo d'un document
           _RoundIcon(
             icon: Icons.photo_camera_rounded,
-            onTap: onAttach,
+            onTap: onCamera,
             iconColor: const Color(0xFF64748B),
             bg: Colors.transparent,
             size: 44,
