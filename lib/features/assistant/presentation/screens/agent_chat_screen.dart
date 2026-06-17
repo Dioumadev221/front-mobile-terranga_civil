@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/assistant_provider.dart';
 import '../../domain/models/message_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../shared/widgets/markdown_text.dart';
 
 /// Chat Ndiogoye — design repris du prototype (avatar animé, suggestions,
 /// bulles dégradées, indicateur de frappe). Branché sur assistantProvider.
@@ -355,14 +356,21 @@ class _MessageBubble extends StatelessWidget {
                 border:
                     isUser ? null : Border.all(color: const Color(0xFFF1F5F9)),
               ),
-              child: Text(
-                msg.content,
-                style: TextStyle(
-                  color: isUser ? Colors.white : const Color(0xFF1E293B),
-                  fontSize: 14,
-                  height: 1.4,
-                ),
-              ),
+              child: isUser
+                  ? Text(
+                      msg.content,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                    )
+                  : MarkdownText(
+                      msg.content,
+                      color: const Color(0xFF1E293B),
+                      fontSize: 14,
+                      height: 1.4,
+                    ),
             ),
           ),
           if (isUser) const SizedBox(width: 12),
