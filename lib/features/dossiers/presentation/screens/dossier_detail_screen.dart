@@ -6,6 +6,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/status_badge.dart';
 import '../providers/dossiers_provider.dart';
+import '../providers/downloaded_docs_provider.dart';
 
 /// Frais officiel par type de démarche (voir [AppConstants]), utilisé en
 /// secours quand le dossier n'a pas de `frais` renseigné côté backend.
@@ -128,6 +129,8 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
     setState(() => _isDownloading = true);
     try {
       final path = await ref.read(downloadCertificateProvider(id).future);
+      // Règle métier : un document prêt ne se télécharge qu'une seule fois.
+      await ref.read(downloadedDocsProvider.notifier).markDownloaded(id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Certificat sauvegardé :\n$path', style: const TextStyle(fontFamily: 'Poppins')), backgroundColor: const Color(0xFF10B981), duration: const Duration(seconds: 5)),
@@ -391,23 +394,39 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
                           Column(
                             children: [
                               if (isDone) ...[
-                                GestureDetector(
-                                  onTap: () => _download(context, d.id),
-                                  child: Container(
+                                if (ref.watch(downloadedDocsProvider).contains(d.id))
+                                  Container(
                                     width: double.infinity, height: 48,
                                     margin: const EdgeInsets.only(bottom: 10),
-                                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), gradient: const LinearGradient(colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+                                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: const Color(0xFFE2E8F0)),
                                     alignment: Alignment.center,
                                     child: const Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.download, color: Colors.white, size: 20),
+                                        Icon(Icons.check_circle, color: Color(0xFF64748B), size: 20),
                                         SizedBox(width: 8),
-                                        Text('Télécharger l\'acte officiel', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'Poppins')),
+                                        Text('Acte déjà téléchargé', style: TextStyle(color: Color(0xFF64748B), fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'Poppins')),
                                       ],
                                     ),
+                                  )
+                                else
+                                  GestureDetector(
+                                    onTap: () => _download(context, d.id),
+                                    child: Container(
+                                      width: double.infinity, height: 48,
+                                      margin: const EdgeInsets.only(bottom: 10),
+                                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), gradient: const LinearGradient(colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+                                      alignment: Alignment.center,
+                                      child: const Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.download, color: Colors.white, size: 20),
+                                          SizedBox(width: 8),
+                                          Text('Télécharger l\'acte officiel', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'Poppins')),
+                                        ],
+                                      ),
+                                    ),
                                   ),
-                                ),
                               ],
                               Row(
                                 children: [

@@ -6,6 +6,7 @@ import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/status_badge.dart';
 import '../../data/models/dossier_model.dart';
 import '../providers/dossiers_provider.dart';
+import '../providers/downloaded_docs_provider.dart';
 
 class DossiersListScreen extends ConsumerStatefulWidget {
   const DossiersListScreen({super.key});
@@ -293,6 +294,8 @@ class _DossierCard extends ConsumerWidget {
     try {
       final path =
           await ref.read(downloadCertificateProvider(dossier.id).future);
+      // Règle métier : un document prêt ne se télécharge qu'une seule fois.
+      await ref.read(downloadedDocsProvider.notifier).markDownloaded(dossier.id);
       messenger
         ..clearSnackBars()
         ..showSnackBar(SnackBar(
@@ -452,11 +455,14 @@ class _DossierCard extends ConsumerWidget {
               children: [
                 if (_isDone) ...[
                   Expanded(
-                    child: GestureDetector(
-                      onTap: () => _download(context, ref),
-                      child: _actionBtn('Télécharger', Icons.download, null,
-                          Colors.white, useGradient: true),
-                    ),
+                    child: ref.watch(downloadedDocsProvider).contains(dossier.id)
+                        ? _actionBtn('Déjà téléchargé', Icons.check_circle,
+                            const Color(0xFFE2E8F0), const Color(0xFF64748B))
+                        : GestureDetector(
+                            onTap: () => _download(context, ref),
+                            child: _actionBtn('Télécharger', Icons.download,
+                                null, Colors.white, useGradient: true),
+                          ),
                   ),
                 ],
                 if (_isIncomplete) ...[
