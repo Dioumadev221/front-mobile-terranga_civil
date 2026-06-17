@@ -27,10 +27,10 @@ class _AgentChatScreenState extends ConsumerState<AgentChatScreen> {
   bool _speechReady = false;
 
   static const _suggestions = [
-    'Comment demander un certificat de naissance ?',
-    'Quel est le délai pour un certificat de mariage ?',
-    'Comment suivre mon dossier ?',
-    'Quels sont les frais de service ?',
+    'Quels documents pour un extrait de naissance ?',
+    'Comment régulariser un terrain (foncier) ?',
+    'Comment prendre un rendez-vous à la mairie ?',
+    'Quels sont les frais et les délais ?',
   ];
 
   @override
