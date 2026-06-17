@@ -216,18 +216,6 @@ final appRouterProvider = Provider.family<GoRouter, String>((ref, initialRoute) 
               state: state,
               child: const DossiersListScreen(),
             ),
-            routes: [
-              GoRoute(
-                path: ':id',
-                pageBuilder: (context, state) {
-                  final id = state.pathParameters['id']!;
-                  return _slidePage(
-                    state: state,
-                    child: DossierDetailScreen(dossierId: id),
-                  );
-                },
-              ),
-            ],
           ),
           GoRoute(
             path: AppRoutes.documents,
@@ -380,6 +368,19 @@ final appRouterProvider = Provider.family<GoRouter, String>((ref, initialRoute) 
           return _slidePage(
             state: state,
             child: PaymentSuccessScreen(dossierId: dossierId),
+          );
+        },
+      ),
+
+      // ── Détail dossier (hors shell : poussable depuis liste, accueil,
+      //    notifications, rendez-vous… sans recréer le shell) ──
+      GoRoute(
+        path: AppRoutes.dossierDetail, // '/dossiers/:id'
+        pageBuilder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return _slidePage(
+            state: state,
+            child: DossierDetailScreen(dossierId: id),
           );
         },
       ),
