@@ -437,8 +437,11 @@ class _DossierCard extends ConsumerWidget {
                   _chip(Icons.warning_amber, 'Action requise', color: const Color(0xFFDC2626), bg: const Color(0xFFFEF2F2), border: const Color(0xFFFECACA))
                 else
                   _chip(Icons.access_time, _isDone ? 'Terminé' : '~2 j restants'),
-                if (dossier.fraisFCFA == null || dossier.fraisFCFA == 0)
-                  _chip(Icons.paid_outlined, 'Gratuit'),
+                _chip(
+                    Icons.paid_outlined,
+                    dossier.effectiveFeeFCFA == 0
+                        ? 'Gratuit'
+                        : AppFormatters.amountFCFA(dossier.effectiveFeeFCFA)),
                 if (dossier.beneficiaryNom != null)
                   _chip(Icons.person_outline, dossier.beneficiaryNom!.split(' ').last),
               ],

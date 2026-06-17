@@ -4,27 +4,12 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/utils/formatters.dart';
-import '../../../../shared/widgets/status_badge.dart';
 import '../providers/dossiers_provider.dart';
 import '../providers/downloaded_docs_provider.dart';
 import '../../data/models/dossier_model.dart';
 
 /// Frais officiel par type de démarche (voir [AppConstants]), utilisé en
 /// secours quand le dossier n'a pas de `frais` renseigné côté backend.
-int _officialFeeForType(String type) {
-  switch (type) {
-    case 'naissance':
-      return AppConstants.naissanceFeesFCFA;
-    case 'deces':
-      return AppConstants.decesFeesFCFA;
-    case 'mariage':
-      return AppConstants.mariageFeesFCFA;
-    case 'residence':
-      return AppConstants.residenceFeesFCFA;
-    default:
-      return 0;
-  }
-}
 
 class DossierDetailScreen extends ConsumerStatefulWidget {
   final String dossierId;
@@ -169,9 +154,7 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
         data: (d) {
           final isDone = d.status == 'pret' || d.status == 'valide';
           final isIncomplete = d.status == 'rejete';
-          final fee = (d.fraisFCFA == null || d.fraisFCFA == 0)
-              ? _officialFeeForType(d.type)
-              : d.fraisFCFA!;
+          final fee = d.effectiveFeeFCFA;
           final feeLabel = fee == 0 ? 'Gratuit' : AppFormatters.amountFCFA(fee);
           // Référence réelle du backend (sinon repli sur l'id).
           final reference = d.reference ?? 'SN-${d.id}';

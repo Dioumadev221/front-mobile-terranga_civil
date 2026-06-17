@@ -1,3 +1,5 @@
+import '../../../../core/constants/app_constants.dart';
+
 /// Mapping des statuts backend (Django, anglais) vers les codes utilisés
 /// par l'UI Flutter (français) — voir [StatusBadge], [DossierProgressStepper]
 /// et [AppFormatters.statusLabel].
@@ -73,6 +75,28 @@ class DossierModel {
     this.completedAt,
     this.documents = const [],
   });
+
+  /// Frais officiels du dossier. Le backend n'expose pas de champ `frais`,
+  /// on retombe donc sur le tarif officiel par type (foncier = 1000 FCFA).
+  int get effectiveFeeFCFA {
+    if (fraisFCFA != null && fraisFCFA! > 0) return fraisFCFA!;
+    switch (type) {
+      case 'naissance':
+        return AppConstants.naissanceFeesFCFA;
+      case 'deces':
+        return AppConstants.decesFeesFCFA;
+      case 'mariage':
+        return AppConstants.mariageFeesFCFA;
+      case 'residence':
+        return AppConstants.residenceFeesFCFA;
+      case 'regularisation':
+      case 'autorisation_construire':
+      case 'mutation_parcelle':
+        return AppConstants.foncierFeesFCFA;
+      default:
+        return 0;
+    }
+  }
 
   /// Progression calculée depuis le statut UI (affichage uniquement)
   double get progress {
