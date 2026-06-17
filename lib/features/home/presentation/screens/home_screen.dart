@@ -6,6 +6,9 @@ import '../../../../core/router/app_router.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../dossiers/presentation/providers/dossiers_provider.dart';
 import '../../../dossiers/data/models/dossier_model.dart';
+import '../../../appointments/presentation/providers/appointments_provider.dart';
+import '../../../appointments/data/models/appointment_model.dart';
+import '../../../../core/utils/formatters.dart';
 import '../../../notifications/notifications.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -1220,11 +1223,12 @@ class _ProactiveAlertCardState extends State<_ProactiveAlertCard> {
 }
 
 // ── RENDEZ-VOUS & AGENDA (même habillage de carte que « Activité récente ») ──
-class _AppointmentsSection extends StatelessWidget {
+class _AppointmentsSection extends ConsumerWidget {
   const _AppointmentsSection();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncAppts = ref.watch(appointmentsListProvider);
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1255,7 +1259,7 @@ class _AppointmentsSection extends StatelessWidget {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {},
+                  onTap: () => context.push(AppRoutes.appointments),
                   child: const Row(
                     children: [
                       Text(
@@ -1274,31 +1278,153 @@ class _AppointmentsSection extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            // Pas d'endpoint backend pour les RDV → état vide (design
-            // conservé, aucune donnée fabriquée).
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16.0),
-              child: Center(
-                child: Column(
+            const SizedBox(height: 16),
+            asyncAppts.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Center(
+                    child: SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2))),
+              ),
+              error: (_, __) => const _AppointmentsEmpty(),
+              data: (list) {
+                if (list.isEmpty) return const _AppointmentsEmpty();
+                final shown = list.take(2).toList();
+                return Column(
                   children: [
-                    Icon(Icons.event_busy_rounded,
-                        color: Color(0xFF94A3B8), size: 32),
-                    SizedBox(height: 10),
-                    Text(
-                      'Aucun rendez-vous programmé',
-                      style: TextStyle(
-                        color: Color(0xFF64748B),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                    ...shown.map((a) => Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: GestureDetector(
+                            onTap: () => context.push(AppRoutes.appointments),
+                            child: _HomeAppointmentTile(appt: a),
+                          ),
+                        )),
+                    if (list.length > shown.length)
+                      GestureDetector(
+                        onTap: () => context.push(AppRoutes.appointments),
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            'Voir tous mes rendez-vous (${list.length})',
+                            style: const TextStyle(
+                                color: Color(0xFF3B82F6),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ),
                       ),
-                    ),
                   ],
-                ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AppointmentsEmpty extends StatelessWidget {
+  const _AppointmentsEmpty();
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 16.0),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(Icons.event_busy_rounded, color: Color(0xFF94A3B8), size: 32),
+            SizedBox(height: 10),
+            Text(
+              'Aucun rendez-vous programmé',
+              style: TextStyle(
+                color: Color(0xFF64748B),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _HomeAppointmentTile extends StatelessWidget {
+  final AppointmentModel appt;
+  const _HomeAppointmentTile({required this.appt});
+
+  Color get _statusColor {
+    switch (appt.status) {
+      case 'scheduled':
+        return const Color(0xFF2563EB);
+      case 'completed':
+        return const Color(0xFF10B981);
+      case 'cancelled':
+        return const Color(0xFFDC2626);
+      default:
+        return const Color(0xFFF59E0B);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: _statusColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(Icons.event_rounded, color: _statusColor, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  appt.dossierReference ?? 'Rendez-vous',
+                  style: const TextStyle(
+                      color: Color(0xFF1E293B),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  appt.scheduledDate != null
+                      ? AppFormatters.dateWithTime(appt.scheduledDate!)
+                      : 'Date à fixer par la mairie',
+                  style: const TextStyle(
+                      color: Color(0xFF64748B), fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+            decoration: BoxDecoration(
+              color: _statusColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(100),
+            ),
+            child: Text(appt.statusLabel,
+                style: TextStyle(
+                    color: _statusColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700)),
+          ),
+        ],
       ),
     );
   }
