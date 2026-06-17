@@ -20,15 +20,43 @@ class AppointmentsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: const Color(0xFF0B285D),
-        onPressed: () => _openRequestSheet(context, ref),
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Demander un RDV',
-            style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'Poppins')),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        child: GestureDetector(
+          onTap: () => _openRequestSheet(context, ref),
+          child: Container(
+            height: 54,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0B285D).withValues(alpha: 0.25),
+                  blurRadius: 14,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            alignment: Alignment.center,
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.add_rounded, color: Colors.white, size: 22),
+                SizedBox(width: 8),
+                Text('Demander un rendez-vous',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'Poppins')),
+              ],
+            ),
+          ),
+        ),
       ),
       body: Column(
         children: [
@@ -82,7 +110,7 @@ class AppointmentsScreen extends ConsumerWidget {
                   onRefresh: () async =>
                       ref.invalidate(appointmentsListProvider),
                   child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
                     itemCount: list.length,
                     itemBuilder: (_, i) => _AppointmentCard(appt: list[i]),
                   ),
