@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/network/dio_client.dart';
+import '../../../../../core/errors/exceptions.dart';
 import '../../../../dossiers/data/remote_datasource.dart';
 
 /// État d'une soumission de demande foncière.
@@ -61,13 +62,24 @@ class FoncierNotifier extends StateNotifier<FoncierState> {
         autoSubmit: false,
       );
 
-      // 2) Téléversement des pièces (requises avant la soumission). On propage
-      //    une erreur d'upload : sans les pièces, la soumission échouerait.
+      // 2) Téléversement des pièces (requises avant la soumission). Le backend
+      //    rejette les fichiers identiques (doublon) : on compte ces cas pour
+      //    prévenir clairement l'utilisateur (sinon la soumission échouerait
+      //    sur un nombre de pièces insuffisant, avec un message obscur).
+      var doublons = 0;
       for (final doc in documents) {
-        await _ds.uploadDocument(
+        final created = await _ds.uploadDocument(
           dossierId: id,
           filePath: doc.path,
           description: doc.description,
+        );
+        if (!created) doublons++;
+      }
+      if (doublons > 0) {
+        throw ApiException(
+          message:
+              'Chaque pièce doit être un fichier différent : $doublons document(s) '
+              'identique(s) détecté(s). Reprenez des photos/fichiers distincts.',
         );
       }
 

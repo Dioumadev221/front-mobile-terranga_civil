@@ -271,10 +271,12 @@ class DossiersRemoteDatasource {
 
   /// Téléverse une pièce jointe (ex : CNI recto/verso) liée à un dossier.
   ///
-  /// Best-effort : en cas d'échec, l'erreur est journalisée mais
-  /// PROPAGÉE (le provider décide s'il doit bloquer ou non), pour que
-  /// l'utilisateur sache que sa pièce d'identité n'a pas été transmise.
-  Future<void> uploadDocument({
+  /// Retourne `true` si la pièce a bien été créée, `false` si le backend l'a
+  /// rejetée comme **doublon** (HTTP 409 : fichier identique déjà téléversé).
+  /// En cas d'autre échec, lève une [ApiException]. Le `false` permet aux
+  /// appelants exigeant un nombre de pièces (foncier) de prévenir l'utilisateur
+  /// qu'une pièce est en double.
+  Future<bool> uploadDocument({
     required String dossierId,
     required String filePath,
     String description = '',
@@ -297,15 +299,15 @@ class DossiersRemoteDatasource {
     });
     final res = await client.post('/documents/', data: formData);
     // 409 = doublon strict détecté côté backend (même fichier, même hash
-    // SHA-256 déjà téléversé). La pièce est donc considérée déjà présente :
-    // on ne remonte pas d'échec à l'utilisateur.
-    if (res.statusCode == 409) return;
+    // SHA-256 déjà téléversé). La pièce n'est PAS rattachée : on renvoie false.
+    if (res.statusCode == 409) return false;
     if (res.statusCode != 200 && res.statusCode != 201) {
       throw ApiException(
         message: 'Échec de l\'envoi du document ($description)',
         statusCode: res.statusCode,
       );
     }
+    return true;
   }
 
   /// Télécharge le certificat PDF pour un dossier.

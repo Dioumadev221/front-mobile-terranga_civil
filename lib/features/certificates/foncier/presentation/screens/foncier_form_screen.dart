@@ -6,6 +6,7 @@ import '../../../../../core/constants/app_constants.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/errors/failures.dart';
+import '../../../../../core/errors/exceptions.dart';
 import '../../../../../shared/widgets/primary_button.dart';
 import '../../../../../shared/widgets/app_text_field.dart';
 import '../../../../../shared/widgets/backend_commune_select.dart';
@@ -172,10 +173,15 @@ class _FoncierFormScreenState extends ConsumerState<FoncierFormScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-      final msg = e is Failure ? e.message : 'Une erreur est survenue.';
+      final msg = e is ApiException
+          ? e.message
+          : e is Failure
+              ? e.message
+              : 'Une erreur est survenue.';
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(msg),
         backgroundColor: AppColors.error,
+        duration: const Duration(seconds: 5),
       ));
     }
   }
@@ -311,7 +317,9 @@ class _FoncierFormScreenState extends ConsumerState<FoncierFormScreen> {
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text('Toutes les pièces sont obligatoires pour soumettre',
+                      Text(
+                          'Toutes les pièces sont obligatoires, et chacune doit '
+                          'être un fichier différent.',
                           style: AppTextStyles.bodySmall),
                       const SizedBox(height: 14),
                       ...cfg.docs.map((d) => Padding(
