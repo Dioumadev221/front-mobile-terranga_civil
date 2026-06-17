@@ -77,37 +77,56 @@ class _AgentChatScreenState extends ConsumerState<AgentChatScreen> {
   }
 
   /// Dictée vocale : démarre/arrête l'écoute et écrit le texte reconnu.
+  /// Tout est protégé : si la reconnaissance échoue (web sans micro, plugin
+  /// absent…), on affiche un message au lieu de rester silencieux.
   Future<void> _toggleMic() async {
     if (_isListening) {
       await _speech.stop();
       if (mounted) setState(() => _isListening = false);
       return;
     }
-    if (!_speechReady) {
-      _speechReady = await _speech.initialize(
-        onStatus: (s) {
-          if ((s == 'done' || s == 'notListening') && mounted) {
-            setState(() => _isListening = false);
-          }
-        },
-        onError: (_) {
-          if (mounted) setState(() => _isListening = false);
-        },
-      );
-    }
-    if (!_speechReady) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Reconnaissance vocale indisponible sur cet appareil.'),
-        ));
+    try {
+      if (!_speechReady) {
+        _speechReady = await _speech.initialize(
+          onStatus: (s) {
+            if ((s == 'done' || s == 'notListening') && mounted) {
+              setState(() => _isListening = false);
+            }
+          },
+          onError: (e) {
+            if (mounted) {
+              setState(() => _isListening = false);
+              _micUnavailable(e.errorMsg);
+            }
+          },
+        );
       }
-      return;
+      if (!_speechReady) {
+        _micUnavailable();
+        return;
+      }
+      setState(() => _isListening = true);
+      await _speech.listen(
+        localeId: 'fr_FR',
+        onResult: (r) => setState(() {
+          _textCtr.text = r.recognizedWords;
+          _textCtr.selection =
+              TextSelection.collapsed(offset: _textCtr.text.length);
+        }),
+      );
+    } catch (_) {
+      if (mounted) setState(() => _isListening = false);
+      _micUnavailable();
     }
-    setState(() => _isListening = true);
-    await _speech.listen(
-      localeId: 'fr_FR',
-      onResult: (r) => setState(() => _textCtr.text = r.recognizedWords),
-    );
+  }
+
+  void _micUnavailable([String? detail]) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(detail != null && detail.isNotEmpty
+          ? 'Micro : $detail'
+          : 'Micro indisponible. Sur le web, utilisez Chrome et autorisez le microphone.'),
+    ));
   }
 
   @override
@@ -716,115 +735,124 @@ class _InputBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasText = controller.text.trim().isNotEmpty;
     return Padding(
       padding: EdgeInsets.fromLTRB(
-          16, 0, 16, 16 + MediaQuery.of(context).viewInsets.bottom),
+          12, 8, 12, 12 + MediaQuery.of(context).viewInsets.bottom),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          // « + » : joindre une photo/document (Ndiogoye le lit via la vision)
+          _RoundIcon(
+            icon: Icons.add_rounded,
+            onTap: onAttach,
+            iconColor: const Color(0xFF1B4A9C),
+            bg: const Color(0xFFEFF3FA),
+            size: 44,
+          ),
+          const SizedBox(width: 8),
+          // Champ « pilule »
+          Expanded(
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 44),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: TextField(
+                controller: controller,
+                maxLines: 5,
+                minLines: 1,
+                style: const TextStyle(color: Color(0xFF0F172A), fontSize: 15),
+                decoration: InputDecoration(
+                  hintText:
+                      isListening ? 'Parlez, je vous écoute…' : 'Message…',
+                  hintStyle: const TextStyle(
+                      color: Color(0xFF94A3B8), fontSize: 15),
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 18, vertical: 12),
+                ),
+                onSubmitted: onSend,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          // Caméra : raccourci pour photographier un document
+          _RoundIcon(
+            icon: Icons.photo_camera_rounded,
+            onTap: onAttach,
+            iconColor: const Color(0xFF64748B),
+            bg: Colors.transparent,
+            size: 44,
+          ),
+          // Micro (toujours visible) → bascule en bouton « envoyer » si on tape
+          if (hasText)
+            _RoundIcon(
+              icon: Icons.send_rounded,
+              onTap: isLoading ? null : () => onSend(controller.text),
+              iconColor: Colors.white,
+              bg: isLoading
+                  ? const Color(0xFFE2E8F0)
+                  : const Color(0xFF0B285D),
+              size: 44,
+              loading: isLoading,
+            )
+          else
+            _RoundIcon(
+              icon: isListening ? Icons.stop_rounded : Icons.mic_rounded,
+              onTap: onMic,
+              iconColor:
+                  isListening ? Colors.white : const Color(0xFF64748B),
+              bg: isListening ? const Color(0xFFEF4444) : Colors.transparent,
+              size: 44,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Bouton circulaire tappable de manière fiable (HitTestBehavior.opaque) —
+/// utilisé pour « + », caméra, micro et envoyer dans la barre de saisie.
+class _RoundIcon extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onTap;
+  final Color iconColor;
+  final Color bg;
+  final double size;
+  final bool loading;
+
+  const _RoundIcon({
+    required this.icon,
+    required this.onTap,
+    required this.iconColor,
+    required this.bg,
+    this.size = 44,
+    this.loading = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(36),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            // Joindre une photo/document (Ndiogoye le lit)
-            GestureDetector(
-              onTap: onAttach,
-              child: Container(
-                width: 40,
-                height: 40,
-                margin: const EdgeInsets.only(right: 8, bottom: 4),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF1F5F9),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.attach_file_rounded,
-                    color: Color(0xFF64748B), size: 20),
-              ),
-            ),
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: TextField(
-                  controller: controller,
-                  maxLines: 4,
-                  minLines: 1,
-                  style: const TextStyle(
-                      color: Color(0xFF0F172A), fontSize: 14),
-                  decoration: const InputDecoration(
-                    hintText: 'Écrivez un message...',
-                    hintStyle:
-                        TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 14),
-                  ),
-                  onSubmitted: onSend,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            if (controller.text.isEmpty && !isListening)
-              GestureDetector(
-                onTap: onMic,
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF0EA5E9), Color(0xFF2563EB)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF0EA5E9).withValues(alpha: 0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(Icons.mic_rounded,
-                      color: Colors.white, size: 24),
+        width: size,
+        height: size,
+        decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+        child: loading
+            ? const Center(
+                child: SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: Color(0xFF64748B)),
                 ),
               )
-            else
-              GestureDetector(
-                onTap: isLoading ? null : () => onSend(controller.text),
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: isLoading
-                        ? const Color(0xFFE2E8F0)
-                        : const Color(0xFF0B285D),
-                    shape: BoxShape.circle,
-                  ),
-                  child: isLoading
-                      ? const Center(
-                          child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2)))
-                      : const Icon(Icons.send_rounded,
-                          color: Colors.white, size: 20),
-                ),
-              ),
-          ],
-        ),
+            : Icon(icon, color: iconColor, size: 22),
       ),
     );
   }
