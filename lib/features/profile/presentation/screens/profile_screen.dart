@@ -33,68 +33,76 @@ class ProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              // ── En-tête style prototype : bannière + avatar à cheval ──
-              Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.bottomCenter,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: 130,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24),
-                      gradient: AppColors.primaryGradient,
-                    ),
-                    child: const Padding(
-                      padding: EdgeInsets.only(top: 22, left: 20),
-                      child: Align(
-                        alignment: Alignment.topLeft,
-                        child: Text(
-                          'Mon Profil',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                    ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // ── En-tête pleine largeur (monte jusqu'en haut de l'écran,
+            //    derrière la status bar) + avatar à cheval ──
+            Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.bottomCenter,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.only(
+                    top: MediaQuery.of(context).padding.top + 20,
+                    left: 24,
+                    right: 24,
+                    bottom: 34,
                   ),
-                  Positioned(
-                    bottom: -40,
-                    child: Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(28),
+                      bottomRight: Radius.circular(28),
+                    ),
+                    gradient: AppColors.primaryGradient,
+                  ),
+                  child: const Align(
+                    alignment: Alignment.topLeft,
+                    child: Text(
+                      'Mon Profil',
+                      style: TextStyle(
                         color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 4),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          initials,
-                          style: AppTextStyles.headlineLarge
-                              .copyWith(color: AppColors.primary),
-                        ),
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 50),
-              Text(nom, style: AppTextStyles.headlineMedium),
+                ),
+                Positioned(
+                  bottom: -40,
+                  child: Container(
+                    width: 90,
+                    height: 90,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 4),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        initials,
+                        style: AppTextStyles.headlineLarge
+                            .copyWith(color: AppColors.primary),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 50),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
+              child: Column(
+                children: [
+                  Text(nom, style: AppTextStyles.headlineMedium),
               const SizedBox(height: 4),
               Text(phone, style: AppTextStyles.bodySmall),
               const SizedBox(height: 12),
@@ -201,9 +209,11 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
-            ],
-          ),
+                  const SizedBox(height: 32),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -213,7 +223,6 @@ class ProfileScreen extends ConsumerWidget {
     final user = ref.read(authProvider).user;
     final prenomCtr = TextEditingController(text: user?.prenom ?? '');
     final nomCtr    = TextEditingController(text: user?.nom ?? '');
-    final pwdCtr    = TextEditingController();
     CommuneModel? commune;
     RegionModel? region;
 
@@ -248,7 +257,7 @@ class ProfileScreen extends ConsumerWidget {
                 ]),
                 const SizedBox(height: 4),
                 Text(
-                  'Modifiez vos informations personnelles. Votre mot de passe est requis pour valider.',
+                  'Modifiez vos informations personnelles (nom, prénom, région et commune).',
                   style: AppTextStyles.bodySmall,
                 ),
                 const Divider(height: 28),
@@ -299,45 +308,7 @@ class ProfileScreen extends ConsumerWidget {
                   }),
                   initialCommuneId: user?.communeId,
                 ),
-                const SizedBox(height: 16),
-
-                // ── Mot de passe (obligatoire) ────────────
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.statusAmberLight,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                        color: AppColors.statusAmber.withValues(alpha: 0.4)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.lock_outline,
-                          color: AppColors.statusAmber, size: 16),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Votre mot de passe actuel est requis pour confirmer les modifications.',
-                          style: AppTextStyles.caption.copyWith(
-                              color: AppColors.statusAmber),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                AppTextField(
-                  label: 'Mot de passe actuel',
-                  hint: '••••••••',
-                  controller: pwdCtr,
-                  obscureText: true,
-                  textInputAction: TextInputAction.done,
-                  prefixIcon: const Icon(Icons.lock_outline,
-                      color: AppColors.textSecondary, size: 18),
-                  validator: (v) => (v == null || v.length < 6)
-                      ? 'Mot de passe requis (6 car. min).' : null,
-                ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
                 // ── Bouton ────────────────────────────────
                 Consumer(builder: (_, ref, __) {
@@ -347,12 +318,6 @@ class ProfileScreen extends ConsumerWidget {
                     isLoading: isLoading,
                     onPressed: () async {
                       if (nomCtr.text.trim().isEmpty) return;
-                      if (pwdCtr.text.length < 6) {
-                        ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
-                            content: Text(
-                                'Veuillez saisir votre mot de passe pour confirmer.')));
-                        return;
-                      }
                       try {
                         await ref.read(profileProvider.notifier).updateProfile(
                               prenom: prenomCtr.text.trim(),

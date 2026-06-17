@@ -536,7 +536,7 @@ class _QuickActionsGrid extends StatelessWidget {
             Expanded(
               child: _buildSquareCard(
                 context,
-                'Logement',
+                'Logement & Foncier',
                 Icons.home_work_rounded,
                 const Color(0xFFFDF4FF),
                 const Color(0xFFC026D3),
@@ -549,8 +549,8 @@ class _QuickActionsGrid extends StatelessWidget {
                       'route': AppRoutes.residenceForm,
                     },
                     {
-                      'title': 'Demande de régularisation',
-                      'icon': Icons.assignment_outlined,
+                      'title': 'Régularisation foncière',
+                      'icon': Icons.real_estate_agent_rounded,
                       'route': AppRoutes.foncierRegularisation,
                     },
                     {
@@ -562,6 +562,10 @@ class _QuickActionsGrid extends StatelessWidget {
                       'title': 'Mutation de parcelle',
                       'icon': Icons.swap_horiz_rounded,
                       'route': AppRoutes.foncierMutation,
+                    },
+                    {
+                      'title': "Permis d'occuper",
+                      'icon': Icons.vpn_key_outlined,
                     },
                   ],
                 }),
@@ -702,21 +706,26 @@ class _TimelineSection extends ConsumerWidget {
                   ),
                 ),
                 GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () => context.go(AppRoutes.dossiers),
-                  child: const Row(
-                    children: [
-                      Text(
-                        'Tout voir',
-                        style: TextStyle(
-                          color: Color(0xFF3B82F6),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Tout voir',
+                          style: TextStyle(
+                            color: Color(0xFF3B82F6),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      SizedBox(width: 4),
-                      Icon(Icons.arrow_forward_rounded,
-                          color: Color(0xFF3B82F6), size: 16),
-                    ],
+                        SizedBox(width: 4),
+                        Icon(Icons.arrow_forward_rounded,
+                            color: Color(0xFF3B82F6), size: 16),
+                      ],
+                    ),
                   ),
                 ),
               ],

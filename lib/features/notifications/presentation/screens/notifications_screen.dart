@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
 import '../../notifications.dart';
 
 ({IconData icon, Color color}) _notifVisual(String title) {
@@ -190,7 +191,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                       itemBuilder: (_, i) {
                         final n = filtered[i];
                         final v = _notifVisual(n.title);
-                        return Container(
+                        return GestureDetector(
+                          onTap: () => _openNotification(context, n),
+                          child: Container(
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                             color: n.isRead
@@ -267,6 +270,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                                 ),
                             ],
                           ),
+                          ),
                         );
                       },
                     ),
@@ -278,6 +282,21 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         ),
       ),
     );
+  }
+
+  /// Ouvre la cible d'une notification : le dossier concerné si on a son id
+  /// (pour télécharger le document), sinon la liste des dossiers pour une
+  /// notification « document disponible ».
+  void _openNotification(BuildContext context, NotificationModel n) {
+    final id = n.relatedDossierId;
+    if (id != null && id.isNotEmpty) {
+      context.push(AppRoutes.dossierDetailPath(id));
+      return;
+    }
+    final t = n.title.toLowerCase();
+    if (t.contains('disponible') || t.contains('prêt') || t.contains('pret')) {
+      context.push(AppRoutes.dossiers);
+    }
   }
 
   Widget _tab(String label, bool active, VoidCallback onTap) {

@@ -147,9 +147,10 @@ class _AgentChatScreenState extends ConsumerState<AgentChatScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
+        top: false,
         child: Column(
           children: [
-            // ── HEADER DÉGRADÉ ──────────────────────────────────────
+            // ── HEADER DÉGRADÉ (monte derrière la status bar) ──────────
             Container(
               decoration: const BoxDecoration(
                 borderRadius: BorderRadius.only(
@@ -169,7 +170,8 @@ class _AgentChatScreenState extends ConsumerState<AgentChatScreen> {
                   ),
                 ],
               ),
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+              padding: EdgeInsets.fromLTRB(
+                  20, MediaQuery.of(context).padding.top + 16, 20, 24),
               child: Row(
                 children: [
                   GestureDetector(

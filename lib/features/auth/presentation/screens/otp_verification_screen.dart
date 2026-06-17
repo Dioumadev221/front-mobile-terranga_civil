@@ -87,7 +87,7 @@ class _OtpVerificationScreenState
         ),
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,7 +126,7 @@ class _OtpVerificationScreenState
               ],
               const SizedBox(height: 24),
               Center(child: OtpResendRow(onResend: _resend)),
-              const Spacer(),
+              const SizedBox(height: 40),
               PrimaryButton(
                 label: 'Confirmer et accéder',
                 onPressed: _submit,
