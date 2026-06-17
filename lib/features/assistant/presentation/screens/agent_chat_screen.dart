@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/assistant_provider.dart';
 import '../../domain/models/message_model.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../../shared/widgets/markdown_text.dart';
+import '../../../../shared/widgets/upload_document_card.dart'
+    show DocumentUploadHelper;
 
 /// Chat Ndiogoye — design repris du prototype (avatar animé, suggestions,
 /// bulles dégradées, indicateur de frappe). Branché sur assistantProvider.
@@ -18,7 +21,9 @@ class AgentChatScreen extends ConsumerStatefulWidget {
 class _AgentChatScreenState extends ConsumerState<AgentChatScreen> {
   final _textCtr = TextEditingController();
   final _scrollCtr = ScrollController();
+  final SpeechToText _speech = SpeechToText();
   bool _isListening = false;
+  bool _speechReady = false;
 
   static const _suggestions = [
     'Comment demander un certificat de naissance ?',
@@ -37,6 +42,7 @@ class _AgentChatScreenState extends ConsumerState<AgentChatScreen> {
 
   @override
   void dispose() {
+    _speech.stop();
     _textCtr.dispose();
     _scrollCtr.dispose();
     super.dispose();
@@ -59,6 +65,48 @@ class _AgentChatScreenState extends ConsumerState<AgentChatScreen> {
     _textCtr.clear();
     await ref.read(assistantProvider.notifier).sendMessage(text);
     _scrollToBottom();
+  }
+
+  /// Joindre une photo/document : Ndiogoye le lit (vision via image_base64).
+  Future<void> _sendImage() async {
+    final path = await DocumentUploadHelper.pick(context);
+    if (path == null) return;
+    await ref.read(assistantProvider.notifier).sendMessage('', imagePath: path);
+    _scrollToBottom();
+  }
+
+  /// Dictée vocale : démarre/arrête l'écoute et écrit le texte reconnu.
+  Future<void> _toggleMic() async {
+    if (_isListening) {
+      await _speech.stop();
+      if (mounted) setState(() => _isListening = false);
+      return;
+    }
+    if (!_speechReady) {
+      _speechReady = await _speech.initialize(
+        onStatus: (s) {
+          if ((s == 'done' || s == 'notListening') && mounted) {
+            setState(() => _isListening = false);
+          }
+        },
+        onError: (_) {
+          if (mounted) setState(() => _isListening = false);
+        },
+      );
+    }
+    if (!_speechReady) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Reconnaissance vocale indisponible sur cet appareil.'),
+        ));
+      }
+      return;
+    }
+    setState(() => _isListening = true);
+    await _speech.listen(
+      localeId: 'fr_FR',
+      onResult: (r) => setState(() => _textCtr.text = r.recognizedWords),
+    );
   }
 
   @override
@@ -191,7 +239,8 @@ class _AgentChatScreenState extends ConsumerState<AgentChatScreen> {
               isLoading: state.isLoading,
               isListening: _isListening,
               onSend: _send,
-              onMic: () => setState(() => _isListening = !_isListening),
+              onMic: _toggleMic,
+              onAttach: _sendImage,
             ),
           ],
         ),
@@ -472,6 +521,7 @@ class _InputBar extends StatelessWidget {
   final bool isListening;
   final void Function(String) onSend;
   final VoidCallback onMic;
+  final VoidCallback onAttach;
 
   const _InputBar({
     required this.controller,
@@ -479,6 +529,7 @@ class _InputBar extends StatelessWidget {
     required this.isListening,
     required this.onSend,
     required this.onMic,
+    required this.onAttach,
   });
 
   @override
@@ -502,6 +553,21 @@ class _InputBar extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            // Joindre une photo/document (Ndiogoye le lit)
+            GestureDetector(
+              onTap: onAttach,
+              child: Container(
+                width: 40,
+                height: 40,
+                margin: const EdgeInsets.only(right: 8, bottom: 4),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF1F5F9),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.attach_file_rounded,
+                    color: Color(0xFF64748B), size: 20),
+              ),
+            ),
             Expanded(
               child: Container(
                 decoration: BoxDecoration(

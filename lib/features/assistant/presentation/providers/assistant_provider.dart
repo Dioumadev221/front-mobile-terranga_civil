@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../../shared/widgets/upload_document_card.dart'
+    show DocumentUploadHelper;
 import '../../data/remote_datasource.dart';
 import '../../domain/models/message_model.dart';
 
@@ -53,11 +56,26 @@ class AssistantNotifier extends StateNotifier<AssistantState> {
     state = state.copyWith(messages: [...state.messages, msg]);
   }
 
-  Future<void> sendMessage(String content) async {
-    if (content.trim().isEmpty) return;
+  Future<void> sendMessage(String content, {String? imagePath}) async {
+    final hasImage = imagePath != null;
+    if (content.trim().isEmpty && !hasImage) return;
 
-    // Ajouter le message utilisateur immédiatement
-    final userMsg = MessageModel.user(content, language: state.language);
+    // Encodage de l'image (vision Ndiogoye) si une pièce est jointe.
+    String? imageBase64;
+    if (hasImage) {
+      final bytes = DocumentUploadHelper.bytesFor(imagePath);
+      if (bytes != null) imageBase64 = base64Encode(bytes);
+    }
+
+    // Texte affiché dans la bulle utilisateur (et message réellement envoyé).
+    final display = content.trim().isNotEmpty
+        ? content
+        : (hasImage ? '📷 Document envoyé' : content);
+    final sent = content.trim().isNotEmpty
+        ? content
+        : (hasImage ? 'Peux-tu analyser ce document ?' : content);
+
+    final userMsg = MessageModel.user(display, language: state.language);
     state = state.copyWith(
       messages: [...state.messages, userMsg],
       isLoading: true,
@@ -74,10 +92,11 @@ class AssistantNotifier extends StateNotifier<AssistantState> {
           .toList();
 
       final response = await _ds.sendMessage(
-        message: content,
+        message: sent,
         language: state.language,
         history: history,
         conversationId: _conversationId,
+        imageBase64: imageBase64,
       );
 
       final assistantMsg = MessageModel.assistant(

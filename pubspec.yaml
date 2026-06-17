@@ -35,6 +35,9 @@ dependencies:
   # Image picker (CNI scan)
   image_picker: ^1.0.7
 
+  # Reconnaissance vocale (dictée dans le chat Ndiogoye)
+  speech_to_text: ^6.6.0
+
   # Animations Lottie
   lottie: ^3.0.0
 
