@@ -56,6 +56,25 @@ class AssistantNotifier extends StateNotifier<AssistantState> {
     state = state.copyWith(messages: [...state.messages, msg]);
   }
 
+  /// Notation d'une réponse (👍 = 1, 👎 = -1). Optimiste : on met à jour la
+  /// bulle immédiatement et on envoie le feedback en arrière-plan (best-effort).
+  Future<void> submitFeedback(String messageId, int rating) async {
+    final idx = state.messages.indexWhere((m) => m.id == messageId);
+    if (idx < 0) return;
+    final msg = state.messages[idx];
+    if (msg.logId == null || msg.feedbackRating != 0) return; // déjà noté
+
+    final updated = [...state.messages];
+    updated[idx] = msg.copyWith(feedbackRating: rating);
+    state = state.copyWith(messages: updated);
+
+    try {
+      await _ds.sendFeedback(logId: msg.logId!, rating: rating);
+    } catch (_) {
+      // Silencieux : la note reste affichée, l'échec n'interrompt pas l'UI.
+    }
+  }
+
   Future<void> sendMessage(String content, {String? imagePath}) async {
     final hasImage = imagePath != null;
     if (content.trim().isEmpty && !hasImage) return;
@@ -100,8 +119,11 @@ class AssistantNotifier extends StateNotifier<AssistantState> {
       );
 
       final assistantMsg = MessageModel.assistant(
-        response,
+        response.reply,
         language: state.language,
+        logId: response.logId,
+        action: response.action,
+        dossierReference: response.dossierReference,
       );
 
       state = state.copyWith(

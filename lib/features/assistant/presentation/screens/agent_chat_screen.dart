@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/router/app_router.dart';
 import '../providers/assistant_provider.dart';
 import '../../domain/models/message_model.dart';
 import 'package:speech_to_text/speech_to_text.dart';
@@ -228,7 +229,15 @@ class _AgentChatScreenState extends ConsumerState<AgentChatScreen> {
                         if (i == state.messages.length && state.isLoading) {
                           return const _TypingIndicator();
                         }
-                        return _MessageBubble(msg: state.messages[i]);
+                        final m = state.messages[i];
+                        return _MessageBubble(
+                          msg: m,
+                          onFeedback: (rating) => ref
+                              .read(assistantProvider.notifier)
+                              .submitFeedback(m.id, rating),
+                          onViewDossiers: () =>
+                              context.go(AppRoutes.dossiers),
+                        );
                       },
                     ),
             ),
@@ -357,12 +366,23 @@ class _SuggestionsView extends StatelessWidget {
 
 class _MessageBubble extends StatelessWidget {
   final MessageModel msg;
+  final void Function(int rating)? onFeedback;
+  final VoidCallback? onViewDossiers;
 
-  const _MessageBubble({required this.msg});
+  const _MessageBubble({
+    required this.msg,
+    this.onFeedback,
+    this.onViewDossiers,
+  });
 
   @override
   Widget build(BuildContext context) {
     final isUser = msg.isUser;
+    final showActions = !isUser &&
+        msg.action == 'SHOW_PAYMENT_AND_DOSSIER' &&
+        msg.dossierReference != null;
+    final showFeedback = !isUser && msg.logId != null;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -375,55 +395,217 @@ class _MessageBubble extends StatelessWidget {
             const SizedBox(width: 12),
           ],
           Flexible(
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isUser ? null : Colors.white,
-                gradient: isUser
-                    ? const LinearGradient(
-                        colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      )
-                    : null,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(20),
-                  topRight: const Radius.circular(20),
-                  bottomLeft: Radius.circular(isUser ? 20 : 4),
-                  bottomRight: Radius.circular(isUser ? 4 : 20),
-                ),
-                boxShadow: isUser
-                    ? null
-                    : [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                border:
-                    isUser ? null : Border.all(color: const Color(0xFFF1F5F9)),
-              ),
-              child: isUser
-                  ? Text(
-                      msg.content,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        height: 1.4,
-                      ),
-                    )
-                  : MarkdownText(
-                      msg.content,
-                      color: const Color(0xFF1E293B),
-                      fontSize: 14,
-                      height: 1.4,
+            child: Column(
+              crossAxisAlignment:
+                  isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isUser ? null : Colors.white,
+                    gradient: isUser
+                        ? const LinearGradient(
+                            colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          )
+                        : null,
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(20),
+                      topRight: const Radius.circular(20),
+                      bottomLeft: Radius.circular(isUser ? 20 : 4),
+                      bottomRight: Radius.circular(isUser ? 4 : 20),
                     ),
+                    boxShadow: isUser
+                        ? null
+                        : [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.03),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                    border: isUser
+                        ? null
+                        : Border.all(color: const Color(0xFFF1F5F9)),
+                  ),
+                  child: isUser
+                      ? Text(
+                          msg.content,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            height: 1.4,
+                          ),
+                        )
+                      : MarkdownText(
+                          msg.content,
+                          color: const Color(0xFF1E293B),
+                          fontSize: 14,
+                          height: 1.4,
+                        ),
+                ),
+                if (showActions)
+                  _DossierActionCard(
+                    reference: msg.dossierReference!,
+                    onViewDossiers: onViewDossiers,
+                  ),
+                if (showFeedback)
+                  _FeedbackRow(
+                    rating: msg.feedbackRating,
+                    onFeedback: onFeedback,
+                  ),
+              ],
             ),
           ),
           if (isUser) const SizedBox(width: 12),
         ],
+      ),
+    );
+  }
+}
+
+/// Carte affichée quand Ndiogoye a créé un dossier (action
+/// SHOW_PAYMENT_AND_DOSSIER) : référence + paiement + accès au dossier.
+class _DossierActionCard extends StatelessWidget {
+  final String reference;
+  final VoidCallback? onViewDossiers;
+
+  const _DossierActionCard({required this.reference, this.onViewDossiers});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F7FF),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFD3E4FB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.folder_open_rounded,
+                  color: Color(0xFF1B4A9C), size: 18),
+              const SizedBox(width: 8),
+              Text(
+                'Dossier créé : $reference',
+                style: const TextStyle(
+                  color: Color(0xFF0B285D),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Réglez les frais (Wave ou Orange Money) puis suivez votre dossier.',
+            style: TextStyle(color: Color(0xFF475569), fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+          GestureDetector(
+            onTap: onViewDossiers,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 11),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.payments_rounded, color: Colors.white, size: 18),
+                  SizedBox(width: 8),
+                  Text(
+                    'Payer & voir le dossier',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Boutons 👍 / 👎 sous une réponse de Ndiogoye (endpoint feedback).
+class _FeedbackRow extends StatelessWidget {
+  final int rating; // 0 = non noté, 1 = 👍, -1 = 👎
+  final void Function(int rating)? onFeedback;
+
+  const _FeedbackRow({required this.rating, this.onFeedback});
+
+  @override
+  Widget build(BuildContext context) {
+    if (rating != 0) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 6, left: 4),
+        child: Row(
+          children: [
+            Icon(
+              rating == 1
+                  ? Icons.thumb_up_rounded
+                  : Icons.thumb_down_rounded,
+              size: 14,
+              color: rating == 1
+                  ? const Color(0xFF10B981)
+                  : const Color(0xFF94A3B8),
+            ),
+            const SizedBox(width: 6),
+            const Text(
+              'Merci pour votre retour',
+              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+            ),
+          ],
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 6, left: 2),
+      child: Row(
+        children: [
+          _FeedbackButton(
+            icon: Icons.thumb_up_outlined,
+            onTap: () => onFeedback?.call(1),
+          ),
+          const SizedBox(width: 4),
+          _FeedbackButton(
+            icon: Icons.thumb_down_outlined,
+            onTap: () => onFeedback?.call(-1),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeedbackButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _FeedbackButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(6),
+        child: Icon(icon, size: 16, color: const Color(0xFF94A3B8)),
       ),
     );
   }

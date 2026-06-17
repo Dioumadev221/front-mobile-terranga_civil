@@ -12,6 +12,12 @@ class MessageModel {
   final String? fileName;     // nom affiché pour les fichiers
   final int? durationSec;     // durée en secondes pour les vocaux
 
+  // ── Champs spécifiques aux réponses de Ndiogoye ──────────────────────
+  final String? logId;            // id pour noter la réponse (feedback)
+  final String action;            // RESPOND / SHOW_PAYMENT_AND_DOSSIER / ...
+  final String? dossierReference; // ref. du dossier créé (ex: DOS-1234)
+  final int feedbackRating;       // 0 = non noté, 1 = 👍, -1 = 👎
+
   const MessageModel({
     required this.id,
     required this.content,
@@ -22,7 +28,27 @@ class MessageModel {
     this.filePath,
     this.fileName,
     this.durationSec,
+    this.logId,
+    this.action = 'RESPOND',
+    this.dossierReference,
+    this.feedbackRating = 0,
   });
+
+  MessageModel copyWith({int? feedbackRating}) => MessageModel(
+        id: id,
+        content: content,
+        isUser: isUser,
+        timestamp: timestamp,
+        language: language,
+        type: type,
+        filePath: filePath,
+        fileName: fileName,
+        durationSec: durationSec,
+        logId: logId,
+        action: action,
+        dossierReference: dossierReference,
+        feedbackRating: feedbackRating ?? this.feedbackRating,
+      );
 
   factory MessageModel.user(String content, {String language = 'fr'}) =>
       MessageModel(
@@ -34,7 +60,13 @@ class MessageModel {
         type: MessageType.text,
       );
 
-  factory MessageModel.assistant(String content, {String language = 'fr'}) =>
+  factory MessageModel.assistant(
+    String content, {
+    String language = 'fr',
+    String? logId,
+    String action = 'RESPOND',
+    String? dossierReference,
+  }) =>
       MessageModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         content: content,
@@ -42,6 +74,9 @@ class MessageModel {
         timestamp: DateTime.now(),
         language: language,
         type: MessageType.text,
+        logId: logId,
+        action: action,
+        dossierReference: dossierReference,
       );
 
   factory MessageModel.voice({
