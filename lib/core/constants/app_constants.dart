@@ -9,9 +9,12 @@ abstract class AppConstants {
   static const String appVersion = '1.0.0';
 
   // ── API ───────────────────────────────────────────────────────────────────
-  // Web (Chrome/Mobile First) : localhost ; Émulateur Android : 10.0.2.2 (alias hôte).
+  // Web (Chrome) : localhost. Mobile (émulateur ET vrai téléphone via USB) :
+  // 127.0.0.1 — fonctionne grâce à `adb reverse tcp:8000 tcp:8000`, qui renvoie
+  // le 127.0.0.1:8000 de l'appareil vers le backend du PC (pas besoin de WiFi
+  // ni de l'IP LAN). Émulateur : `adb reverse` marche aussi (sinon 10.0.2.2).
   static final String apiBaseUrl =
-      kIsWeb ? 'http://localhost:8000/api' : 'http://10.0.2.2:8000/api';
+      kIsWeb ? 'http://localhost:8000/api' : 'http://127.0.0.1:8000/api';
 
   // Hôte logique envoyé dans l'en-tête HTTP `Host`. La connexion TCP part bien
   // vers 10.0.2.2 (alias émulateur → PC hôte), mais Django valide le header

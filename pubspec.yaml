@@ -36,7 +36,9 @@ dependencies:
   image_picker: ^1.0.7
 
   # Reconnaissance vocale (dictée dans le chat Ndiogoye)
-  speech_to_text: ^6.6.0
+  # 7.x : compatible embedding v2 (la 6.x utilisait l'API Registrar supprimée,
+  # ce qui cassait la compilation Android).
+  speech_to_text: ^7.0.0
 
   # Animations Lottie
   lottie: ^3.0.0

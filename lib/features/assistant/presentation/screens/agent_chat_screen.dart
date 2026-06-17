@@ -116,7 +116,7 @@ class _AgentChatScreenState extends ConsumerState<AgentChatScreen> {
       }
       setState(() => _isListening = true);
       await _speech.listen(
-        localeId: 'fr_FR',
+        listenOptions: SpeechListenOptions(localeId: 'fr_FR'),
         onResult: (r) => setState(() {
           _textCtr.text = r.recognizedWords;
           _textCtr.selection =
