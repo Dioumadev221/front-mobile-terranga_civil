@@ -7,6 +7,7 @@ import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/status_badge.dart';
 import '../providers/dossiers_provider.dart';
 import '../providers/downloaded_docs_provider.dart';
+import '../../data/models/dossier_model.dart';
 
 /// Frais officiel par type de démarche (voir [AppConstants]), utilisé en
 /// secours quand le dossier n'a pas de `frais` renseigné côté backend.
@@ -172,6 +173,10 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
               ? _officialFeeForType(d.type)
               : d.fraisFCFA!;
           final feeLabel = fee == 0 ? 'Gratuit' : AppFormatters.amountFCFA(fee);
+          // Référence réelle du backend (sinon repli sur l'id).
+          final reference = d.reference ?? 'SN-${d.id}';
+          // Dates réelles des étapes (DossierDetailSerializer).
+          final submitted = d.submittedAt ?? d.createdAt;
 
           Color badgeBg;
           Color badgeText;
@@ -236,7 +241,7 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
                                     const SizedBox(height: 6),
                                     Text(AppFormatters.certTypeLabel(d.type), style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800, fontFamily: 'Poppins', letterSpacing: -0.3, height: 1.2)),
                                     const SizedBox(height: 4),
-                                    Text('#SN-${d.id} · ${d.communeNom ?? 'Mairie'}', style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13, fontFamily: 'Poppins')),
+                                    Text('$reference · ${d.communeNom ?? 'Mairie'}', style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13, fontFamily: 'Poppins')),
                                   ],
                                 ),
                               ),
@@ -269,7 +274,7 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
                             child: Column(
                               children: [
                                 Row(children: [
-                                  Expanded(child: _infoCell('Référence', '#SN-${d.id}', hasBorder: true)),
+                                  Expanded(child: _infoCell('Référence', reference, hasBorder: true)),
                                   Expanded(child: _infoCell('Type', AppFormatters.certTypeLabel(d.type))),
                                 ]),
                                 Row(children: [
@@ -358,9 +363,9 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
                               padding: const EdgeInsets.only(top: 14, bottom: 6),
                               child: Column(
                                 children: [
-                                  _timelineItem(step: 'Dossier soumis', agent: 'Via Teranga Civil · Système', time: AppFormatters.dateShort(d.createdAt), note: 'Dossier enregistré. Confirmation envoyée par SMS.', isOk: true, isLast: false),
-                                  _timelineItem(step: 'Vérification des pièces', agent: d.agentNom ?? 'Agent état civil', time: d.progress >= 0.5 ? AppFormatters.dateShort(d.createdAt) : '-', note: d.progress >= 0.5 ? 'Pièces vérifiées et validées.' : 'En attente de vérification.', isOk: d.progress >= 0.5, isLast: false, isErr: isIncomplete),
-                                  _timelineItem(step: 'Acte signé et disponible', agent: 'Mairie', time: isDone ? AppFormatters.dateShort(d.createdAt) : '-', note: isDone ? 'Document officiel prêt au téléchargement.' : 'En attente de signature.', isOk: isDone, isLast: true),
+                                  _timelineItem(step: 'Dossier soumis', agent: 'Via Teranga Civil · Système', time: AppFormatters.dateShort(submitted), note: 'Dossier enregistré. Confirmation envoyée par SMS.', isOk: true, isLast: false),
+                                  _timelineItem(step: 'Vérification des pièces', agent: d.agentNom ?? 'Agent état civil', time: d.reviewedAt != null ? AppFormatters.dateShort(d.reviewedAt!) : '-', note: d.progress >= 0.5 ? 'Pièces vérifiées et validées.' : 'En attente de vérification.', isOk: d.progress >= 0.5, isLast: false, isErr: isIncomplete),
+                                  _timelineItem(step: 'Acte signé et disponible', agent: 'Mairie', time: d.completedAt != null ? AppFormatters.dateShort(d.completedAt!) : '-', note: isDone ? 'Document officiel prêt au téléchargement.' : 'En attente de signature.', isOk: isDone, isLast: true),
                                 ],
                               ),
                             ),
@@ -369,25 +374,33 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
                           // Section Pièces fournies
                           _sectionCard(
                             icon: Icons.attach_file,
-                            title: 'Pièces fournies',
-                            comingSoon: true,
-                            child: Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: Column(
-                                children: [
-                                  Container(
-                                    width: 48, height: 48,
-                                    decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(12)),
-                                    alignment: Alignment.center,
-                                    child: const Icon(Icons.folder_open_outlined, color: Color(0xFFCBD5E1), size: 24),
+                            title: 'Pièces fournies (${d.documents.length})',
+                            child: d.documents.isEmpty
+                                ? const Padding(
+                                    padding: EdgeInsets.all(20),
+                                    child: Column(
+                                      children: [
+                                        Icon(Icons.folder_open_outlined,
+                                            color: Color(0xFFCBD5E1), size: 28),
+                                        SizedBox(height: 8),
+                                        Text('Aucune pièce jointe',
+                                            style: TextStyle(
+                                                color: Color(0xFF94A3B8),
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                fontFamily: 'Poppins')),
+                                      ],
+                                    ),
+                                  )
+                                : Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
+                                    child: Column(
+                                      children: d.documents
+                                          .map((doc) => _documentRow(doc))
+                                          .toList(),
+                                    ),
                                   ),
-                                  const SizedBox(height: 10),
-                                  const Text('Documents non disponibles', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
-                                  const SizedBox(height: 4),
-                                  const Text('La liste des pièces sera affichée\nquand l\'API sera disponible', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11, fontFamily: 'Poppins', height: 1.4)),
-                                ],
-                              ),
-                            ),
                           ),
 
                           // ── Boutons d'action ──
@@ -529,6 +542,56 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
       Text(label.toUpperCase(), style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5, fontFamily: 'Poppins')),
     ]),
   );
+
+  Widget _documentRow(DossierDocument doc) {
+    final subtitle = [
+      if (doc.fileType != null && doc.fileType!.isNotEmpty)
+        doc.fileType!.toUpperCase(),
+      if (doc.sizeLabel != null) doc.sizeLabel!,
+    ].join(' · ');
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(10)),
+            alignment: Alignment.center,
+            child: const Icon(Icons.insert_drive_file_outlined,
+                color: Color(0xFF1D4ED8), size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(doc.description?.isNotEmpty == true
+                        ? doc.description!
+                        : doc.filename,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Poppins')),
+                if (subtitle.isNotEmpty)
+                  Text(subtitle,
+                      style: const TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 11,
+                          fontFamily: 'Poppins')),
+              ],
+            ),
+          ),
+          const Icon(Icons.check_circle, color: Color(0xFF10B981), size: 18),
+        ],
+      ),
+    );
+  }
 
   Widget _sectionCard({required IconData icon, required String title, required Widget child, bool comingSoon = false}) {
     return Container(

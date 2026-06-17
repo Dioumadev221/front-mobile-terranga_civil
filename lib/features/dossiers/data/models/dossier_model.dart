@@ -50,6 +50,12 @@ class DossierModel {
   final int? fraisFCFA;
   final String? agentNom;
   final String? agentPhone;
+  // Champs exposés par le DossierDetailSerializer (et partiellement la liste).
+  final String? reference; // ex: DOS-2026-B36C3
+  final DateTime? submittedAt;
+  final DateTime? reviewedAt;
+  final DateTime? completedAt;
+  final List<DossierDocument> documents;
 
   const DossierModel({
     required this.id,
@@ -61,6 +67,11 @@ class DossierModel {
     this.fraisFCFA,
     this.agentNom,
     this.agentPhone,
+    this.reference,
+    this.submittedAt,
+    this.reviewedAt,
+    this.completedAt,
+    this.documents = const [],
   });
 
   /// Progression calculée depuis le statut UI (affichage uniquement)
@@ -99,6 +110,55 @@ class DossierModel {
       agentNom: json['agent_name'] as String?,
       agentPhone: (json['assigned_agent'] as Map<String, dynamic>?)?['phone']
           as String?,
+      reference: json['reference'] as String?,
+      submittedAt: _parseDate(json['submitted_at']),
+      reviewedAt: _parseDate(json['reviewed_at']),
+      completedAt: _parseDate(json['completed_at']),
+      documents: (json['documents'] is List)
+          ? (json['documents'] as List)
+              .whereType<Map<String, dynamic>>()
+              .map(DossierDocument.fromJson)
+              .toList()
+          : const [],
     );
+  }
+
+  static DateTime? _parseDate(dynamic v) =>
+      (v is String && v.isNotEmpty) ? DateTime.tryParse(v) : null;
+}
+
+/// Pièce jointe d'un dossier (DocumentListSerializer côté backend).
+class DossierDocument {
+  final String id;
+  final String filename;
+  final String? fileType;
+  final int? fileSize;
+  final String? description;
+
+  const DossierDocument({
+    required this.id,
+    required this.filename,
+    this.fileType,
+    this.fileSize,
+    this.description,
+  });
+
+  factory DossierDocument.fromJson(Map<String, dynamic> json) => DossierDocument(
+        id: json['id']?.toString() ?? '',
+        filename: (json['original_filename'] as String?)?.trim().isNotEmpty ==
+                true
+            ? json['original_filename'] as String
+            : 'Document',
+        fileType: json['file_type'] as String?,
+        fileSize: json['file_size'] as int?,
+        description: json['description'] as String?,
+      );
+
+  /// Taille lisible (Ko / Mo).
+  String? get sizeLabel {
+    final s = fileSize;
+    if (s == null || s <= 0) return null;
+    if (s < 1024 * 1024) return '${(s / 1024).toStringAsFixed(0)} Ko';
+    return '${(s / (1024 * 1024)).toStringAsFixed(1)} Mo';
   }
 }
