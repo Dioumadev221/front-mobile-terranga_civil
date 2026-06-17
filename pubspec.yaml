@@ -61,6 +61,9 @@ dependencies:
   # Dossiers système (download PDF)
   path_provider: ^2.1.2
 
+  # Ouvrir le PDF téléchargé dans le lecteur du téléphone
+  open_filex: ^4.5.0
+
   # Ouvrir URLs externes (CGU, politique)
   url_launcher: ^6.2.5
 
