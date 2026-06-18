@@ -196,7 +196,7 @@ class _LangToggle extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _LangBtn(label: '🇫🇷 FR', selected: current == 'fr',
+          _LangBtn(label: 'FR', selected: current == 'fr',
               onTap: () => onChanged('fr')),
           _LangBtn(label: 'WO', selected: current == 'wo',
               onTap: () => onChanged('wo')),

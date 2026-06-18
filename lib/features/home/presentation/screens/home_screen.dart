@@ -21,34 +21,15 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  Timer? _greetingTimer;
-  bool _isFrench = true;
-  int _messageIndex = 0;
-
-  final List<String> _civicMessages = [
-    "Bienvenue sur votre espace personnel.",
-    "L'état civil est le socle de vos droits citoyens.",
-    "Déclarez vos naissances à temps pour l'avenir de vos enfants.",
-    "Un citoyen à jour est un citoyen serein et protégé.",
-    "La numérisation sécurise vos documents pour toute la vie.",
-  ];
-
   @override
   void initState() {
     super.initState();
-    _greetingTimer = Timer.periodic(const Duration(seconds: 8), (timer) {
-      if (mounted) {
-        setState(() {
-          _isFrench = !_isFrench;
-          _messageIndex = (_messageIndex + 1) % _civicMessages.length;
-        });
-      }
-    });
+    // En-tête stable (rendu sobre) : plus de rotation FR/Wolof ni de slogans
+    // qui défilent — une salutation selon l'heure + un sous-titre fixe.
   }
 
   @override
   void dispose() {
-    _greetingTimer?.cancel();
     super.dispose();
   }
 
@@ -64,9 +45,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final commune = user?.communeNom ?? 'Non renseignée';
     final unreadNotifs = ref.watch(unreadNotificationsCountProvider);
 
-    final greetingText =
-        _isFrench ? 'Bonjour, $prenom' : 'Dalal akk jamm, $prenom';
-    final currentCivicMessage = _civicMessages[_messageIndex];
+    final hour = DateTime.now().hour;
+    final salut = hour < 18 ? 'Bonjour' : 'Bonsoir';
+    final greetingText = prenom.isEmpty ? salut : '$salut, $prenom';
+    const currentCivicMessage = 'Bienvenue sur votre espace citoyen.';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -234,13 +216,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           },
                           child: Text(
                             currentCivicMessage,
-                            key: ValueKey<int>(_messageIndex),
+                            key: const ValueKey<String>('civic'),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 19,
-                              fontWeight: FontWeight.w800,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
                               height: 1.2,
                               letterSpacing: -0.5,
                             ),

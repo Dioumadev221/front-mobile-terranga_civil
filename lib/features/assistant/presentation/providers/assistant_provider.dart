@@ -89,7 +89,7 @@ class AssistantNotifier extends StateNotifier<AssistantState> {
     // Texte affiché dans la bulle utilisateur (et message réellement envoyé).
     final display = content.trim().isNotEmpty
         ? content
-        : (hasImage ? '📷 Document envoyé' : content);
+        : (hasImage ? 'Document envoyé' : content);
     final sent = content.trim().isNotEmpty
         ? content
         : (hasImage ? 'Peux-tu analyser ce document ?' : content);

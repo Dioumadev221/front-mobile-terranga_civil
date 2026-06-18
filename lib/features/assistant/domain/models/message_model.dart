@@ -86,7 +86,7 @@ class MessageModel {
   }) =>
       MessageModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        content: '🎤 Message vocal',
+        content: 'Message vocal',
         isUser: true,
         timestamp: DateTime.now(),
         language: language,
@@ -101,7 +101,7 @@ class MessageModel {
   }) =>
       MessageModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        content: '🖼️ Image',
+        content: 'Photo envoyée',
         isUser: true,
         timestamp: DateTime.now(),
         language: language,
@@ -117,7 +117,7 @@ class MessageModel {
   }) =>
       MessageModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        content: '📎 $fileName',
+        content: fileName,
         isUser: true,
         timestamp: DateTime.now(),
         language: language,
