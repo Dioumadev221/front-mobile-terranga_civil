@@ -77,36 +77,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 child: Stack(
                   children: [
-                    // Halo flouté bleu (haut-droite) — effet photo en fond
-                    Positioned(
-                      top: -60,
-                      right: -50,
+                    // Photo de Dakar floutée en arrière-plan (effet premium)
+                    Positioned.fill(
                       child: ImageFiltered(
-                        imageFilter: ui.ImageFilter.blur(sigmaX: 55, sigmaY: 55),
-                        child: Container(
-                          width: 210,
-                          height: 210,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color:
-                                const Color(0xFF3B7AC4).withValues(alpha: 0.55),
-                          ),
+                        imageFilter: ui.ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                        child: Image.asset(
+                          'assets/images/dakar_hero.jpg',
+                          fit: BoxFit.cover,
+                          alignment: Alignment.center,
                         ),
                       ),
                     ),
-                    // Halo flouté ambre (bas-gauche)
-                    Positioned(
-                      bottom: -50,
-                      left: -50,
-                      child: ImageFiltered(
-                        imageFilter: ui.ImageFilter.blur(sigmaX: 55, sigmaY: 55),
-                        child: Container(
-                          width: 190,
-                          height: 190,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color:
-                                const Color(0xFFC9883E).withValues(alpha: 0.38),
+                    // Voile navy pour la lisibilité du texte + identité de marque
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              const Color(0xFF0B285D).withValues(alpha: 0.80),
+                              const Color(0xFF0B2E66).withValues(alpha: 0.58),
+                              const Color(0xFF0A1F4D).withValues(alpha: 0.94),
+                            ],
                           ),
                         ),
                       ),
