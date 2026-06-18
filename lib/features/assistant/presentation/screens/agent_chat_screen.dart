@@ -213,11 +213,15 @@ class _AgentChatScreenState extends ConsumerState<AgentChatScreen> {
                               ),
                             ),
                             const SizedBox(width: 6),
-                            Text(
-                              'Votre assistant personnel',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.8),
-                                fontSize: 13,
+                            Flexible(
+                              child: Text(
+                                'Votre assistant personnel',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                  fontSize: 13,
+                                ),
                               ),
                             ),
                           ],
