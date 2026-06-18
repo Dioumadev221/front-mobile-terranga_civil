@@ -319,11 +319,13 @@ class _SuggestionsView extends StatelessWidget {
                 const AnimatedNdiogoye(size: 100),
                 const SizedBox(height: 16),
                 Text(
-                  'Salam $userName ! Je suis Ndiogoye',
+                  (userName.isEmpty || userName == 'Utilisateur')
+                      ? 'Je suis Ndiogoye'
+                      : 'Bonjour $userName, je suis Ndiogoye',
                   style: const TextStyle(
                     color: Color(0xFF0F172A),
                     fontSize: 20,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
                   textAlign: TextAlign.center,
                 ),

@@ -224,7 +224,7 @@ class DocumentsScreen extends ConsumerWidget {
                 crossAxisCount: 2,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
-                childAspectRatio: 0.98,
+                childAspectRatio: 0.85,
               ),
               itemCount: _familles.length,
               itemBuilder: (context, index) {
