@@ -165,16 +165,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Image.asset(Assets.logoTeranga,
                     width: 148, height: 148, fit: BoxFit.contain),
                 const SizedBox(height: 22),
-                Text('Se connecter',
+                Text('Bon retour',
                     textAlign: TextAlign.center,
                     style: AppTextStyles.headlineLarge),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
-                  'UTILISEZ VOTRE TÉLÉPHONE OU VOTRE EMAIL',
+                  'Connectez-vous pour accéder à vos démarches',
                   textAlign: TextAlign.center,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.textHint,
-                    letterSpacing: 1.2,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 32),
