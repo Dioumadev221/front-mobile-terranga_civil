@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -48,7 +49,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final hour = DateTime.now().hour;
     final salut = hour < 18 ? 'Bonjour' : 'Bonsoir';
     final greetingText = prenom.isEmpty ? salut : '$salut, $prenom';
-    const currentCivicMessage = 'Bienvenue sur votre espace citoyen.';
+    const currentCivicMessage = "Vos démarches d'état civil, simplifiées.";
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -64,14 +65,55 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   bottomRight: Radius.circular(32),
                 ),
                 gradient: LinearGradient(
-                  colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF0B2E66), Color(0xFF0B285D), Color(0xFF0A1F4D)],
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
                 ),
               ),
-              child: SafeArea(
-                bottom: false,
-                child: Column(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
+                child: Stack(
+                  children: [
+                    // Halo flouté bleu (haut-droite) — effet photo en fond
+                    Positioned(
+                      top: -60,
+                      right: -50,
+                      child: ImageFiltered(
+                        imageFilter: ui.ImageFilter.blur(sigmaX: 55, sigmaY: 55),
+                        child: Container(
+                          width: 210,
+                          height: 210,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color:
+                                const Color(0xFF3B7AC4).withValues(alpha: 0.55),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Halo flouté ambre (bas-gauche)
+                    Positioned(
+                      bottom: -50,
+                      left: -50,
+                      child: ImageFiltered(
+                        imageFilter: ui.ImageFilter.blur(sigmaX: 55, sigmaY: 55),
+                        child: Container(
+                          width: 190,
+                          height: 190,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color:
+                                const Color(0xFFC9883E).withValues(alpha: 0.38),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SafeArea(
+                      bottom: false,
+                      child: Column(
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(
@@ -221,9 +263,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 18,
+                              fontSize: 22,
                               fontWeight: FontWeight.w600,
-                              height: 1.2,
+                              height: 1.25,
                               letterSpacing: -0.5,
                             ),
                           ),
@@ -231,6 +273,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
+                      ],
+                    ),
+                  ),
                   ],
                 ),
               ),
