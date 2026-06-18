@@ -666,23 +666,20 @@ class _TimelineSection extends ConsumerWidget {
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () => context.go(AppRoutes.dossiers),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Tout voir',
-                          style: TextStyle(
-                            color: Color(0xFF3B82F6),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        SizedBox(width: 4),
-                        Icon(Icons.arrow_forward_rounded,
-                            color: Color(0xFF3B82F6), size: 16),
-                      ],
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0B285D),
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                    child: const Text(
+                      'Tout voir',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
@@ -706,7 +703,7 @@ class _TimelineSection extends ConsumerWidget {
 
                     final sortedDossiers = List.of(dossiers)
                       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-                    final recentDossiers = sortedDossiers.take(3).toList();
+                    final recentDossiers = sortedDossiers.take(2).toList();
 
                     return Column(
                       children: List.generate(recentDossiers.length, (index) {
@@ -831,39 +828,28 @@ class _TimelineSection extends ConsumerWidget {
                   ),
                 ],
                 const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: badgeBgColor,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        status.toUpperCase(),
-                        style: TextStyle(
-                          color: badgeTextColor,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: badgeBgColor,
+                    borderRadius: BorderRadius.circular(100),
+                  ),
+                  child: Text(
+                    status,
+                    style: TextStyle(
+                      color: badgeTextColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      time,
-                      style: const TextStyle(
-                        color: Color(0xFF94A3B8),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
           ),
+          const SizedBox(width: 8),
+          const Icon(Icons.chevron_right_rounded,
+              color: Color(0xFFCBD5E1), size: 20),
         ],
       ),
     );
@@ -1401,85 +1387,6 @@ class _HomeAppointmentTile extends StatelessWidget {
 class _CityHallLocationCard extends ConsumerWidget {
   const _CityHallLocationCard();
 
-  Widget _buildNewsItem({
-    required String tag,
-    required Color tagColor,
-    required Color tagBg,
-    required String title,
-    required String commune,
-    required String time,
-    required IconData icon,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: tagBg,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        tag.toUpperCase(),
-                        style: TextStyle(
-                          color: tagColor,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        '$commune • $time',
-                        style: const TextStyle(
-                          color: Color(0xFF94A3B8),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Color(0xFF1E293B),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
-            ),
-            child: Icon(icon, color: tagColor, size: 22),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mairie = ref.watch(mairiesProchesProvider).maybeWhen(
@@ -1631,48 +1538,6 @@ class _CityHallLocationCard extends ConsumerWidget {
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 24),
-              const Divider(color: Color(0xFFE2E8F0), height: 1),
-              const SizedBox(height: 20),
-              const Text(
-                'Actualités civiques',
-                style: TextStyle(
-                  color: Color(0xFF0F172A),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.3,
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildNewsItem(
-                tag: 'Alerte',
-                tagColor: const Color(0xFFD97706),
-                tagBg: const Color(0xFFFEF3C7),
-                title:
-                    'Fermeture exceptionnelle du guichet 3 ce vendredi matin.',
-                commune: 'Dakar Plateau',
-                time: 'Il y a 2h',
-                icon: Icons.warning_amber_rounded,
-              ),
-              _buildNewsItem(
-                tag: 'Info',
-                tagColor: const Color(0xFF2563EB),
-                tagBg: const Color(0xFFDBEAFE),
-                title:
-                    'Nouveaux tarifs applicables pour les copies littérales dès lundi.',
-                commune: 'Dakar Plateau',
-                time: 'Hier',
-                icon: Icons.info_outline_rounded,
-              ),
-              _buildNewsItem(
-                tag: 'Événement',
-                tagColor: const Color(0xFF059669),
-                tagBg: const Color(0xFFD1FAE5),
-                title: "Journée de sensibilisation à l'état civil le 15 Juin.",
-                commune: 'Dakar (Toutes)',
-                time: '15 Juin',
-                icon: Icons.event_available_rounded,
               ),
             ],
           ),
