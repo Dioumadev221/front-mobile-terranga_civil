@@ -253,39 +253,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(height: 16),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: SizedBox(
-                        height: 72,
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 800),
-                          transitionBuilder: (child, animation) {
-                            return FadeTransition(
-                              opacity: animation,
-                              child: SlideTransition(
-                                position: Tween<Offset>(
-                                  begin: const Offset(0.0, 0.2),
-                                  end: Offset.zero,
-                                ).animate(animation),
-                                child: child,
-                              ),
-                            );
-                          },
-                          child: Text(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
                             currentCivicMessage,
-                            key: const ValueKey<String>('civic'),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 22,
+                              fontSize: 23,
                               fontWeight: FontWeight.w600,
                               height: 1.25,
                               letterSpacing: -0.5,
                             ),
                           ),
-                        ),
+                          const SizedBox(height: 7),
+                          Text(
+                            'République du Sénégal · Service en ligne',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.82),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 34),
                       ],
                     ),
                   ),
@@ -322,131 +317,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 }
 
 // ── LA CARTE PRINCIPALE FLOTTANTE ───────────────────────────────────────
-class _MainActionCard extends StatefulWidget {
+class _MainActionCard extends StatelessWidget {
   const _MainActionCard();
 
   @override
-  State<_MainActionCard> createState() => _MainActionCardState();
-}
-
-class _MainActionCardState extends State<_MainActionCard> {
-  int _currentIndex = 0;
-  Timer? _timer;
-
-  final List<String> _recommendations = [
-    'Rechercher "Extrait de naissance"...',
-    'Demander un "Certificat de mariage"...',
-    'Suivre "Mon dossier en cours"...',
-    'Rechercher "Certificat de résidence"...',
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 8), (timer) {
-      if (mounted) {
-        setState(() {
-          _currentIndex = (_currentIndex + 1) % _recommendations.length;
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0B285D).withValues(alpha: 0.06),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      onTap: () => _showDemarcheSearch(context),
+      child: Container(
+        height: 58,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0B285D).withValues(alpha: 0.12),
+              blurRadius: 22,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Row(
           children: [
-            const Text(
-              'Que souhaitez-vous faire ?',
-              style: TextStyle(
-                color: Color(0xFF0F172A),
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.3,
+            const SizedBox(width: 16),
+            const Icon(Icons.search_rounded,
+                color: Color(0xFF64748B), size: 22),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'Rechercher une démarche…',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: Color(0xFF94A3B8), fontSize: 15),
               ),
             ),
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: () => _showDemarcheSearch(context),
-              child: Container(
-              height: 50,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
-              ),
-              child: Row(
-                children: [
-                  const SizedBox(width: 14),
-                  const Icon(Icons.search_rounded,
-                      color: Color(0xFF3B82F6), size: 22),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 400),
-                      transitionBuilder: (child, animation) {
-                        return FadeTransition(
-                          opacity: animation,
-                          child: SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(0.0, 0.2),
-                              end: Offset.zero,
-                            ).animate(animation),
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: Container(
-                        key: ValueKey<int>(_currentIndex),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          _recommendations[_currentIndex],
-                          style: const TextStyle(
-                            color: Color(0xFF94A3B8),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: 36,
-                    height: 36,
-                    margin: const EdgeInsets.only(right: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.mic_none_rounded,
-                        color: Color(0xFF3B82F6), size: 18),
-                  ),
-                ],
-              ),
-            )),
+            const Icon(Icons.mic_none_rounded,
+                color: Color(0xFF0B285D), size: 21),
+            const SizedBox(width: 16),
           ],
         ),
       ),
@@ -479,9 +386,10 @@ class _QuickActionsGrid extends StatelessWidget {
               child: _buildSquareCard(
                 context,
                 'Naissance',
-                Icons.person_add_alt_1_rounded,
+                Icons.child_friendly_rounded,
                 const Color(0xFFEFF6FF),
                 const Color(0xFF2563EB),
+                subtitle: 'Extrait, acte',
                 onTap: () => context.push(AppRoutes.categoryDemarches, extra: {
                   'category': 'Naissance',
                   'items': [
@@ -508,10 +416,11 @@ class _QuickActionsGrid extends StatelessWidget {
             Expanded(
               child: _buildSquareCard(
                 context,
-                'Mariage & famille',
-                Icons.people_alt_rounded,
+                'Mariage',
+                Icons.favorite_rounded,
                 const Color(0xFFFEF2F2),
                 const Color(0xFFDC2626),
+                subtitle: 'Certificat',
                 onTap: () => context.push(AppRoutes.categoryDemarches, extra: {
                   'category': 'Mariage & famille',
                   'items': [
@@ -538,9 +447,10 @@ class _QuickActionsGrid extends StatelessWidget {
               child: _buildSquareCard(
                 context,
                 'Décès',
-                Icons.folder_special_outlined,
-                const Color(0xFFF8FAFC),
+                Icons.local_florist_rounded,
+                const Color(0xFFF1F5F9),
                 const Color(0xFF475569),
+                subtitle: 'Acte, permis',
                 onTap: () => context.push(AppRoutes.categoryDemarches, extra: {
                   'category': 'Décès',
                   'items': [
@@ -562,10 +472,11 @@ class _QuickActionsGrid extends StatelessWidget {
             Expanded(
               child: _buildSquareCard(
                 context,
-                'Logement & Foncier',
-                Icons.home_work_rounded,
+                'Logement',
+                Icons.maps_home_work_rounded,
                 const Color(0xFFFDF4FF),
                 const Color(0xFFC026D3),
+                subtitle: 'Résidence, foncier',
                 onTap: () => context.push(AppRoutes.categoryDemarches, extra: {
                   'category': 'Logement & Foncier',
                   'items': [
@@ -605,7 +516,7 @@ class _QuickActionsGrid extends StatelessWidget {
 
   Widget _buildSquareCard(BuildContext context, String title, IconData icon,
       Color bgColor, Color iconColor,
-      {required VoidCallback onTap}) {
+      {required VoidCallback onTap, String? subtitle}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -635,16 +546,34 @@ class _QuickActionsGrid extends StatelessWidget {
                 ),
                 child: Icon(icon, color: iconColor, size: 24),
               ),
-              Text(
-                title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFF1E293B),
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.3,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFF1E293B),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF94A3B8),
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ],
           ),
