@@ -312,36 +312,25 @@ class _SuggestionsView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Column(
-              children: [
-                const SizedBox(height: 20),
-                const AnimatedNdiogoye(size: 100),
-                const SizedBox(height: 16),
-                Text(
-                  (userName.isEmpty || userName == 'Utilisateur')
-                      ? 'Je suis Ndiogoye'
-                      : 'Bonjour $userName, je suis Ndiogoye',
-                  style: const TextStyle(
-                    color: Color(0xFF0F172A),
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  "Comment puis-je t'aider aujourd'hui ?",
-                  style: TextStyle(
-                    color: Color(0xFF64748B),
-                    fontSize: 14,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+          const SizedBox(height: 8),
+          Text(
+            (userName.isEmpty || userName == 'Utilisateur')
+                ? 'Comment puis-je vous aider ?'
+                : 'Bonjour $userName,\ncomment puis-je vous aider ?',
+            style: const TextStyle(
+              color: Color(0xFF0F172A),
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              height: 1.25,
+              letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 8),
+          const Text(
+            'Posez votre question ou choisissez une suggestion ci-dessous.',
+            style: TextStyle(color: Color(0xFF64748B), fontSize: 14, height: 1.4),
+          ),
+          const SizedBox(height: 28),
           const Text(
             'Suggestions de questions',
             style: TextStyle(
