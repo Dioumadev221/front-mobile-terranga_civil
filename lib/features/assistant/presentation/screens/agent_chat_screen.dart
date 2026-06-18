@@ -197,30 +197,30 @@ class _AgentChatScreenState extends ConsumerState<AgentChatScreen> {
                           'Ndiogoye',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 3),
                         Row(
                           children: [
                             Container(
-                              width: 8,
-                              height: 8,
+                              width: 7,
+                              height: 7,
                               decoration: const BoxDecoration(
-                                color: Color(0xFF10B981),
+                                color: Color(0xFF4ADE80),
                                 shape: BoxShape.circle,
                               ),
                             ),
                             const SizedBox(width: 6),
                             Flexible(
                               child: Text(
-                                'Votre assistant personnel',
+                                'En ligne · Assistant IA',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.8),
-                                  fontSize: 13,
+                                  fontSize: 12.5,
                                 ),
                               ),
                             ),
@@ -351,50 +351,31 @@ class _SuggestionsView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          ...suggestions.map((s) => GestureDetector(
-                onTap: () => onTap(s),
-                child: Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFF1F5F9)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.02),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFF8FAFC),
-                          shape: BoxShape.circle,
+          Wrap(
+            spacing: 8,
+            runSpacing: 10,
+            children: suggestions
+                .map((s) => GestureDetector(
+                      onTap: () => onTap(s),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE9F1FB),
+                          borderRadius: BorderRadius.circular(100),
                         ),
-                        child: const Icon(Icons.chat_bubble_outline_rounded,
-                            size: 16, color: Color(0xFF0EA5E9)),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
                         child: Text(
                           s,
                           style: const TextStyle(
-                            color: Color(0xFF1E293B),
-                            fontSize: 14,
-                            height: 1.4,
+                            color: Color(0xFF1B4A9C),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              )),
+                    ))
+                .toList(),
+          ),
         ],
       ),
     );
