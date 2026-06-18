@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/errors/exceptions.dart';
+import '../../../../shared/data/communes_remote_datasource.dart';
+import '../../../../shared/models/commune_model.dart';
 import '../../../../shared/widgets/upload_document_card.dart'
     show DocumentUploadHelper;
 
@@ -43,11 +45,48 @@ class NaissanceRemoteDatasource {
                 ?.cast<String, dynamic>() ??
             (body['extracted_data'] as Map?)?.cast<String, dynamic>() ??
             {};
-        return _normalize(extracted);
+        final out = _normalize(extracted);
+        // Résolution région/commune : on cherche dans le texte OCR brut (qui
+        // contient « COMMUNE DE : … ») une commune connue du backend.
+        final rawText = '${body['raw_text'] ?? ''} '
+            '${extracted['centre_etat_civil'] ?? ''}';
+        final commune = await _matchCommune(rawText);
+        if (commune != null) {
+          out['commune_id'] = commune.id;
+          out['commune_nom'] = commune.name;
+        }
+        return out;
       }
       throw const ApiException(message: 'Extraction OCR échouée');
     } on DioException {
       throw const ApiException(message: 'Erreur lors de l\'extraction OCR');
+    }
+  }
+
+  /// Cherche, dans le texte OCR, une commune dont le nom backend apparaît.
+  /// Renvoie la correspondance la plus longue (la plus spécifique).
+  Future<BackendCommuneModel?> _matchCommune(String rawText) async {
+    String norm(String s) => s
+        .toLowerCase()
+        .replaceAll(RegExp(r'[àâä]'), 'a')
+        .replaceAll(RegExp(r'[éèêë]'), 'e')
+        .replaceAll(RegExp(r'[îï]'), 'i')
+        .replaceAll(RegExp(r'[ôö]'), 'o')
+        .replaceAll(RegExp(r'[ûü]'), 'u');
+    try {
+      final communes =
+          await CommunesRemoteDatasource(client: client).getCommunes();
+      final text = norm(rawText);
+      BackendCommuneModel? best;
+      for (final c in communes) {
+        final n = norm(c.name);
+        if (n.length >= 4 && text.contains(n)) {
+          if (best == null || n.length > best.name.length) best = c;
+        }
+      }
+      return best;
+    } catch (_) {
+      return null;
     }
   }
 
