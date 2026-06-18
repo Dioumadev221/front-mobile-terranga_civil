@@ -142,17 +142,30 @@ class _RecapSelfScreenState extends ConsumerState<RecapSelfScreen> {
       final ds = NaissanceRemoteDatasource(client: ref.read(dioClientProvider));
       final data = await ds.extractOcr(imagePath);
       if (!mounted) return;
+      final reg = data['registre'] as String? ?? '';
+      final annee = data['annee_registre'];
+      final hasDate = data['date_naissance'] != null;
+      // Aucune donnée exploitable (ex. document manuscrit illisible par l'IA) :
+      // on évite un faux « succès » et on invite à saisir manuellement.
+      if (reg.isEmpty && annee == null && !hasDate) {
+        setState(() {
+          _ocrLoading = false;
+          _ocrSuccess = false;
+          _ocrMessage =
+              'Lecture automatique impossible (document manuscrit ou peu lisible). '
+              'Saisissez les informations manuellement ci-dessous.';
+        });
+        return;
+      }
       setState(() {
         _ocrLoading = false;
         _ocrSuccess = true;
-        final reg = data['registre'] as String? ?? '';
         if (reg.isNotEmpty) {
           _registreCtr.text = reg.length > 12 ? reg.substring(0, 12) : reg;
         }
-        if (data['date_naissance'] != null) {
+        if (hasDate) {
           _dateNaissance = DateTime.tryParse(data['date_naissance'] as String);
         }
-        final annee = data['annee_registre'];
         if (annee != null) {
           _anneeCtr.text = annee.toString();
         }
