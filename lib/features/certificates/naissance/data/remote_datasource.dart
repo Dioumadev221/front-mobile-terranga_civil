@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/errors/exceptions.dart';
@@ -20,23 +21,28 @@ class NaissanceRemoteDatasource {
   /// envoyer `dossier_type` ne provoque plus de 400.
   Future<Map<String, dynamic>> extractOcr(String imagePath) async {
     try {
-      final fileName = imagePath.split(RegExp(r'[\\/]')).last;
+      // On envoie l'image en base64 à `/ai/ocr/camera/` (et non `/ocr/extract/`)
+      // car ce dernier refuse l'OCR si un dossier identique est déjà en cours
+      // (règle anti-doublon backend) — or l'OCR ici ne sert qu'à pré-remplir.
       final bytes = DocumentUploadHelper.bytesFor(imagePath);
-      final MultipartFile multipart = bytes != null
-          ? MultipartFile.fromBytes(bytes, filename: fileName)
-          : await MultipartFile.fromFile(imagePath, filename: fileName);
+      if (bytes == null) {
+        throw const ApiException(message: 'Image illisible pour l\'OCR');
+      }
+      final b64 = 'data:image/jpeg;base64,${base64Encode(bytes)}';
 
-      final formData = FormData.fromMap({
-        'document': multipart,
+      final res = await client.post('/ai/ocr/camera/', data: {
+        'image_base64': b64,
         'dossier_type': 'birth_certificate',
       });
 
-      final res = await client.post('/ai/ocr/extract/', data: formData);
-
       if (res.statusCode == 200 && res.data is Map) {
         final body = res.data as Map<String, dynamic>;
-        final extracted =
-            (body['extracted_data'] as Map?)?.cast<String, dynamic>() ?? {};
+        // Nouveau backend OCR (Gemini) : champs sous `structured_data`.
+        // `extracted_data` gardé en repli pour l'ancien contrat.
+        final extracted = (body['structured_data'] as Map?)
+                ?.cast<String, dynamic>() ??
+            (body['extracted_data'] as Map?)?.cast<String, dynamic>() ??
+            {};
         return _normalize(extracted);
       }
       throw const ApiException(message: 'Extraction OCR échouée');

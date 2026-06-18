@@ -6,8 +6,10 @@ import '../../../../core/router/app_router.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../dossiers/presentation/providers/dossiers_provider.dart';
 import '../../../dossiers/data/models/dossier_model.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../appointments/presentation/providers/appointments_provider.dart';
 import '../../../appointments/data/models/appointment_model.dart';
+import '../../../communes/presentation/providers/mairie_provider.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../notifications/notifications.dart';
 
@@ -1440,7 +1442,7 @@ class _HomeAppointmentTile extends StatelessWidget {
 }
 
 // ── MA MAIRIE LA PLUS PROCHE (statique) ─────────────────────────────────
-class _CityHallLocationCard extends StatelessWidget {
+class _CityHallLocationCard extends ConsumerWidget {
   const _CityHallLocationCard();
 
   Widget _buildNewsItem({
@@ -1523,7 +1525,18 @@ class _CityHallLocationCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mairie = ref.watch(mairiesProchesProvider).maybeWhen(
+          data: (l) => l.isNotEmpty ? l.first : null,
+          orElse: () => null,
+        );
+    final mairieNom = mairie?.nom ?? 'Mairie de votre commune';
+    final mairieDist = (mairie?.distanceKm != null)
+        ? 'À ${mairie!.distanceKm!.toStringAsFixed(1)} km'
+        : 'Localisation en cours…';
+    final mairieHoraire = (mairie?.horaires.isNotEmpty ?? false)
+        ? mairie!.horaires
+        : 'Lun-Ven 08h00-17h00';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1566,27 +1579,27 @@ class _CityHallLocationCard extends StatelessWidget {
                         color: Color(0xFF2563EB), size: 24),
                   ),
                   const SizedBox(width: 16),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Mairie de Dakar Plateau',
-                          style: TextStyle(
+                          mairieNom,
+                          style: const TextStyle(
                             color: Color(0xFF1E293B),
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.directions_walk_rounded,
+                            const Icon(Icons.directions_walk_rounded,
                                 color: Color(0xFF64748B), size: 14),
-                            SizedBox(width: 4),
+                            const SizedBox(width: 4),
                             Text(
-                              'À 450m (6 min à pied)',
-                              style: TextStyle(
+                              mairieDist,
+                              style: const TextStyle(
                                 color: Color(0xFF64748B),
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
@@ -1594,18 +1607,22 @@ class _CityHallLocationCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.access_time_rounded,
+                            const Icon(Icons.access_time_rounded,
                                 color: Color(0xFF059669), size: 14),
-                            SizedBox(width: 4),
-                            Text(
-                              'Ouvert - Ferme à 16h30',
-                              style: TextStyle(
-                                color: Color(0xFF059669),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                mairieHoraire,
+                                style: const TextStyle(
+                                  color: Color(0xFF059669),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -1620,7 +1637,13 @@ class _CityHallLocationCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () {},
+                      onPressed: mairie == null
+                          ? null
+                          : () => launchUrl(
+                                Uri.parse(
+                                    'https://www.google.com/maps/dir/?api=1&destination=${mairie.latitude},${mairie.longitude}'),
+                                mode: LaunchMode.externalApplication,
+                              ),
                       icon: const Icon(Icons.directions_rounded, size: 18),
                       label: const Text('Itinéraire'),
                       style: ElevatedButton.styleFrom(
@@ -1636,7 +1659,10 @@ class _CityHallLocationCard extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () {},
+                      onPressed: (mairie == null || mairie.telephone.isEmpty)
+                          ? null
+                          : () => launchUrl(Uri.parse(
+                              'tel:${mairie.telephone.replaceAll(' ', '')}')),
                       icon: const Icon(Icons.phone_outlined, size: 18),
                       label: const Text('Appeler'),
                       style: OutlinedButton.styleFrom(

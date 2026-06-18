@@ -64,6 +64,9 @@ dependencies:
   # Ouvrir le PDF téléchargé dans le lecteur du téléphone
   open_filex: ^4.5.0
 
+  # Géolocalisation (mairie la plus proche)
+  geolocator: ^12.0.0
+
   # Ouvrir URLs externes (CGU, politique)
   url_launcher: ^6.2.5
 
