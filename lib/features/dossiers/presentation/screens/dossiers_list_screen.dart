@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/utils/formatters.dart';
-import '../../../../shared/widgets/status_badge.dart';
 import '../../data/models/dossier_model.dart';
 import '../providers/dossiers_provider.dart';
 import '../providers/downloaded_docs_provider.dart';
@@ -58,7 +57,6 @@ class _DossiersListScreenState extends ConsumerState<DossiersListScreen> {
           final total = dossiers.length;
           final termines = dossiers.where((d) => _isDone(d.status)).length;
           final enCours = dossiers.where((d) => !_isDone(d.status) && !_isIncomplete(d.status)).length;
-          final incomplets = dossiers.where((d) => _isIncomplete(d.status)).length;
 
           final filtered = dossiers.where((d) {
             switch (_selectedFilter) {
@@ -77,54 +75,101 @@ class _DossiersListScreenState extends ConsumerState<DossiersListScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── HEADER BLEU ───────────────────────────────────────
+                    // ── HERO (navy + halos, cohérent avec l'accueil) ──────
                     Container(
                       decoration: const BoxDecoration(
                         borderRadius: BorderRadius.only(
-                          bottomLeft: Radius.circular(32),
-                          bottomRight: Radius.circular(32),
+                          bottomLeft: Radius.circular(28),
+                          bottomRight: Radius.circular(28),
                         ),
                         gradient: LinearGradient(
-                          colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
+                          colors: [
+                            Color(0xFF0B2E66),
+                            Color(0xFF0B285D),
+                            Color(0xFF0A1F4D)
+                          ],
+                          begin: Alignment.topRight,
+                          end: Alignment.bottomLeft,
                         ),
                       ),
-                      padding: const EdgeInsets.fromLTRB(20, 56, 20, 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Column(
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(28),
+                          bottomRight: Radius.circular(28),
+                        ),
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: RadialGradient(
+                                    center: const Alignment(0.8, -0.9),
+                                    radius: 1.0,
+                                    colors: [
+                                      const Color(0xFF3B7AC4)
+                                          .withValues(alpha: 0.50),
+                                      const Color(0xFF3B7AC4)
+                                          .withValues(alpha: 0.0),
+                                    ],
+                                    stops: const [0.0, 0.6],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Positioned.fill(
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: RadialGradient(
+                                    center: const Alignment(-0.95, 1.0),
+                                    radius: 1.0,
+                                    colors: [
+                                      const Color(0xFFC9883E)
+                                          .withValues(alpha: 0.30),
+                                      const Color(0xFFC9883E)
+                                          .withValues(alpha: 0.0),
+                                    ],
+                                    stops: const [0.0, 0.55],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.fromLTRB(20, 56, 20, 42),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Mes dossiers',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 26,
-                                      fontWeight: FontWeight.w800,
-                                      fontFamily: 'Poppins',
-                                      letterSpacing: -0.5,
-                                      height: 1.1,
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Mes dossiers',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w700,
+                                            fontFamily: 'Poppins',
+                                            letterSpacing: -0.5,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 5),
+                                        Text(
+                                          "Suivez l'avancement de vos demandes",
+                                          style: TextStyle(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.78),
+                                            fontSize: 13,
+                                            fontFamily: 'Poppins',
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    'Dernière mise à jour · aujourd\'hui',
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.6),
-                                      fontSize: 12,
-                                      fontFamily: 'Poppins',
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                children: [
+                                  const SizedBox(width: 10),
                                   _hdrBtn(Icons.event_rounded,
                                       onTap: () => context
                                           .push(AppRoutes.appointments)),
@@ -134,30 +179,40 @@ class _DossiersListScreenState extends ConsumerState<DossiersListScreen> {
                                           .push(AppRoutes.notifications)),
                                 ],
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-                          // Stats
-                          Row(
-                            children: [
-                              Expanded(child: _statCard('Total', total, Colors.white.withValues(alpha: 0.1), Colors.white, Colors.white.withValues(alpha: 0.6))),
-                              const SizedBox(width: 8),
-                              Expanded(child: _statCard('Validés', termines, const Color(0x3310B981), const Color(0xFF6EE7B7), const Color(0x996EE7B7))),
-                              const SizedBox(width: 8),
-                              Expanded(child: _statCard('En cours', enCours, const Color(0x33F59E0B), const Color(0xFFFCD34D), const Color(0x99FCD34D))),
-                              const SizedBox(width: 8),
-                              Expanded(child: _statCard('Incomplet', incomplets, const Color(0x33EF4444), const Color(0xFFFCA5A5), const Color(0x99FCA5A5))),
-                            ],
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // ── Stats (cartes blanches qui chevauchent le hero) ──
+                    Transform.translate(
+                      offset: const Offset(0, -34),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 18),
+                        child: Row(
+                          children: [
+                            Expanded(
+                                child: _statCard(
+                                    'Total', total, const Color(0xFF0F172A))),
+                            const SizedBox(width: 10),
+                            Expanded(
+                                child: _statCard('En cours', enCours,
+                                    const Color(0xFFC0840F))),
+                            const SizedBox(width: 10),
+                            Expanded(
+                                child: _statCard('Prêts', termines,
+                                    const Color(0xFF1E7A48))),
+                          ],
+                        ),
                       ),
                     ),
 
                     // ── FILTRES ───────────────────────────────────────────
                     Container(
                       color: const Color(0xFFF8FAFC),
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
-                      height: 66,
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+                      height: 52,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: _filters.length,
@@ -168,43 +223,29 @@ class _DossiersListScreenState extends ConsumerState<DossiersListScreen> {
                           return GestureDetector(
                             onTap: () => setState(() => _selectedFilter = f),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
-                                gradient: sel ? const LinearGradient(colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)], begin: Alignment.topCenter, end: Alignment.bottomCenter) : null,
-                                color: sel ? null : Colors.white,
+                                color: sel
+                                    ? const Color(0xFF0B285D)
+                                    : Colors.white,
                                 borderRadius: BorderRadius.circular(100),
-                                border: sel ? null : Border.all(color: const Color(0xFFE2E8F0)),
+                                border: sel
+                                    ? null
+                                    : Border.all(color: const Color(0xFFE6EAF0)),
                               ),
-                              child: Text(f, style: TextStyle(color: sel ? Colors.white : const Color(0xFF64748B), fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
+                              child: Text(f,
+                                  style: TextStyle(
+                                      color: sel
+                                          ? Colors.white
+                                          : const Color(0xFF475569),
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      fontFamily: 'Poppins')),
                             ),
                           );
                         },
-                      ),
-                    ),
-
-                    // ── Compteur ──────────────────────────────────────────
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '${filtered.length} dossier${filtered.length > 1 ? 's' : ''} · triés par date',
-                            style: const TextStyle(color: Color(0xFF64748B), fontSize: 13, fontWeight: FontWeight.w500, fontFamily: 'Poppins'),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(100)),
-                            child: const Row(
-                              children: [
-                                Icon(Icons.swap_vert, size: 14, color: Color(0xFF0B285D)),
-                                SizedBox(width: 4),
-                                Text('Récents', style: TextStyle(color: Color(0xFF0B285D), fontSize: 12, fontWeight: FontWeight.w700, fontFamily: 'Poppins')),
-                              ],
-                            ),
-                          ),
-                        ],
                       ),
                     ),
                   ],
@@ -258,15 +299,37 @@ class _DossiersListScreenState extends ConsumerState<DossiersListScreen> {
     );
   }
 
-  Widget _statCard(String label, int count, Color bg, Color num, Color lbl) {
+  Widget _statCard(String label, int count, Color numColor) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
+      padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFECEFF4)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0B285D).withValues(alpha: 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Column(
         children: [
-          Text('$count', style: TextStyle(color: num, fontSize: 22, fontWeight: FontWeight.w800, fontFamily: 'Poppins', height: 1)),
-          const SizedBox(height: 4),
-          Text(label.toUpperCase(), style: TextStyle(color: lbl, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5, fontFamily: 'Poppins')),
+          Text('$count',
+              style: TextStyle(
+                  color: numColor,
+                  fontSize: 21,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'Poppins',
+                  height: 1)),
+          const SizedBox(height: 5),
+          Text(label,
+              style: const TextStyle(
+                  color: Color(0xFF94A3B8),
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: 'Poppins')),
         ],
       ),
     );
@@ -282,7 +345,6 @@ class _DossierCard extends ConsumerWidget {
 
   bool get _isDone => dossier.status == 'pret' || dossier.status == 'valide';
   bool get _isIncomplete => dossier.status == 'rejete';
-  bool get _isEnCours => !_isDone && !_isIncomplete;
 
   /// Télécharge le certificat PDF du dossier (web/natif via downloadCertificate).
   Future<void> _download(BuildContext context, WidgetRef ref) async {
@@ -314,57 +376,33 @@ class _DossierCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Couleurs selon statut
-    final Color borderColor;
-    final Color badgeBg;
-    final Color badgeText;
-    final String badgeLabel;
-    final Color iconBg;
-    final Color iconColor;
+    final t = _typeStyle(dossier.type);
+    final s = _statusStyle();
+    final downloaded = ref.watch(downloadedDocsProvider).contains(dossier.id);
+    final ref8 = dossier.id.length > 8
+        ? dossier.id.substring(0, 8).toUpperCase()
+        : dossier.id.toUpperCase();
 
-    if (_isDone) {
-      borderColor = const Color(0xFFBFDBFE);
-      badgeBg = const Color(0xFFD1FAE5);
-      badgeText = const Color(0xFF065F46);
-      badgeLabel = 'VALIDÉ';
-      iconBg = const Color(0xFFF1F5F9);
-      iconColor = const Color(0xFF475569);
-    } else if (_isIncomplete) {
-      borderColor = const Color(0xFFFECACA);
-      badgeBg = const Color(0xFFFEE2E2);
-      badgeText = const Color(0xFF991B1B);
-      badgeLabel = 'INCOMPLET';
-      iconBg = const Color(0xFFFEF2F2);
-      iconColor = const Color(0xFFDC2626);
-    } else {
-      borderColor = const Color(0xFFFDE68A);
-      badgeBg = const Color(0xFFFEF9C3);
-      badgeText = const Color(0xFF92400E);
-      badgeLabel = 'EN COURS';
-      iconBg = const Color(0xFFFFF7ED);
-      iconColor = const Color(0xFFEA580C);
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor, width: _isDone ? 1.0 : 1.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── En-tête ──
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      onTap: () => context.push(AppRoutes.dossierDetailPath(dossier.id)),
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFECEFF4)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
                 Container(
                   width: 44,
                   height: 44,
-                  decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(12)),
-                  child: Icon(Icons.file_copy_outlined, color: iconColor, size: 20),
+                  decoration: BoxDecoration(
+                      color: t.$2, borderRadius: BorderRadius.circular(13)),
+                  child: Icon(t.$1, color: t.$3, size: 22),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -373,172 +411,180 @@ class _DossierCard extends ConsumerWidget {
                     children: [
                       Text(
                         AppFormatters.certTypeLabel(dossier.type),
-                        style: const TextStyle(color: Color(0xFF0F172A), fontSize: 15, fontWeight: FontWeight.w700, fontFamily: 'Poppins', height: 1.3),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color: Color(0xFF1E293B),
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'Poppins'),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '#SN-${dossier.id.length > 8 ? dossier.id.substring(0, 8) : dossier.id} · ${dossier.communeNom ?? 'Mairie'}',
-                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12, fontFamily: 'Poppins'),
+                        'N° $ref8 · ${AppFormatters.dateShort(dossier.createdAt)}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color: Color(0xFF94A3B8),
+                            fontSize: 12,
+                            fontFamily: 'Poppins'),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(color: badgeBg, borderRadius: BorderRadius.circular(100)),
-                      child: Text(badgeLabel, style: TextStyle(color: badgeText, fontSize: 10, fontWeight: FontWeight.w800, fontFamily: 'Poppins', letterSpacing: 0.5)),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(AppFormatters.dateShort(dossier.createdAt), style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontFamily: 'Poppins', fontWeight: FontWeight.w500)),
-                  ],
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                      color: s.$3, borderRadius: BorderRadius.circular(100)),
+                  child: Text(s.$1,
+                      style: TextStyle(
+                          color: s.$2,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Poppins')),
                 ),
               ],
             ),
-          ),
-
-          // ── Stepper de progression ──
-          if (!_isDone)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  DossierProgressStepper(currentStatus: dossier.status),
-                  if (_isIncomplete) ...[
-                    const SizedBox(height: 6),
-                    Row(
-                      children: const [
-                        Icon(Icons.warning_amber_rounded, size: 13, color: Color(0xFFDC2626)),
-                        SizedBox(width: 4),
-                        Text('Action requise — pièce manquante', style: TextStyle(color: Color(0xFFDC2626), fontSize: 11, fontWeight: FontWeight.w500, fontFamily: 'Poppins')),
-                      ],
-                    ),
-                  ],
-                ],
+            const SizedBox(height: 14),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(100),
+              child: LinearProgressIndicator(
+                value: dossier.progress,
+                minHeight: 5,
+                backgroundColor: const Color(0xFFEEF1F6),
+                valueColor: AlwaysStoppedAnimation<Color>(s.$2),
               ),
             ),
-
-          // ── Chips ──
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                if (_isIncomplete)
-                  _chip(Icons.warning_amber, 'Action requise', color: const Color(0xFFDC2626), bg: const Color(0xFFFEF2F2), border: const Color(0xFFFECACA))
-                else
-                  _chip(Icons.access_time, _isDone ? 'Terminé' : '~2 j restants'),
-                _chip(
-                    Icons.paid_outlined,
-                    dossier.effectiveFeeFCFA == 0
-                        ? 'Gratuit'
-                        : AppFormatters.amountFCFA(dossier.effectiveFeeFCFA)),
-                if (dossier.beneficiaryNom != null)
-                  _chip(Icons.person_outline, dossier.beneficiaryNom!.split(' ').last),
-              ],
-            ),
-          ),
-
-          // ── Séparateur ──
-          Container(height: 1.0, color: const Color(0xFFF1F5F9), margin: const EdgeInsets.symmetric(horizontal: 16)),
-
-          // ── Actions ──
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                if (_isDone) ...[
+            const SizedBox(height: 12),
+            if (_isDone)
+              Row(
+                children: [
                   Expanded(
-                    child: ref.watch(downloadedDocsProvider).contains(dossier.id)
-                        ? _actionBtn('Déjà téléchargé', Icons.check_circle,
-                            const Color(0xFFE2E8F0), const Color(0xFF64748B))
+                    child: downloaded
+                        ? _btn('Déjà téléchargé', Icons.check_circle,
+                            const Color(0xFFEEF1F6), const Color(0xFF64748B),
+                            filled: true)
                         : GestureDetector(
                             onTap: () => _download(context, ref),
-                            child: _actionBtn('Télécharger', Icons.download,
-                                null, Colors.white, useGradient: true),
+                            child: _btn('Télécharger', Icons.download_rounded,
+                                const Color(0xFF0B285D), Colors.white,
+                                filled: true),
                           ),
                   ),
-                ],
-                if (_isIncomplete) ...[
-                  Expanded(child: _actionBtn('Supprimer', Icons.delete_outline, Colors.white, const Color(0xFF475569), border: const Color(0xFFE2E8F0))),
-                  const SizedBox(width: 8),
-                  Expanded(child: _actionBtn('Corriger', Icons.refresh, const Color(0xFFDC2626), Colors.white)),
-                ],
-                if (_isEnCours) ...[
-                  Expanded(child: _actionBtn('Relancer', Icons.phone, const Color(0xFFFEF9C3), const Color(0xFF92400E))),
-                  const SizedBox(width: 8),
-                  Expanded(child: _actionBtn('Contacter', Icons.message, Colors.white, const Color(0xFF475569), border: const Color(0xFFE2E8F0))),
-                ],
-                const SizedBox(width: 8),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => context.push(AppRoutes.dossierDetailPath(dossier.id)),
-                    child: Container(
-                      height: 36,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)], begin: Alignment.topCenter, end: Alignment.bottomCenter),
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.remove_red_eye, size: 14, color: Colors.white),
-                          SizedBox(width: 4),
-                          Text('Détail', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
-                        ],
-                      ),
-                    ),
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    onTap: () =>
+                        context.push(AppRoutes.dossierDetailPath(dossier.id)),
+                    child: _btn('Détail', null, Colors.white,
+                        const Color(0xFF475569),
+                        filled: false),
                   ),
-                ),
-              ],
-            ),
-          ),
-        ],
+                ],
+              )
+            else
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _isIncomplete ? 'Action requise' : s.$1,
+                    style: TextStyle(
+                        color: _isIncomplete
+                            ? const Color(0xFFA32D2D)
+                            : const Color(0xFF94A3B8),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: 'Poppins'),
+                  ),
+                  const Row(
+                    children: [
+                      Text('Détail',
+                          style: TextStyle(
+                              color: Color(0xFF1B4A9C),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Poppins')),
+                      SizedBox(width: 4),
+                      Icon(Icons.arrow_forward_rounded,
+                          size: 15, color: Color(0xFF1B4A9C)),
+                    ],
+                  ),
+                ],
+              ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _chip(IconData icon, String label, {Color color = const Color(0xFF64748B), Color bg = const Color(0xFFF8FAFC), Color border = const Color(0xFFE2E8F0)}) {
+  /// (icône, fond, couleur) selon le type de démarche.
+  (IconData, Color, Color) _typeStyle(String type) {
+    switch (type) {
+      case 'naissance':
+        return (Icons.child_friendly_rounded, Color(0xFFE6F0FB), Color(0xFF1B4A9C));
+      case 'mariage':
+        return (Icons.favorite_rounded, Color(0xFFFBE9EF), Color(0xFFB23A60));
+      case 'deces':
+        return (Icons.local_florist_rounded, Color(0xFFF1F5F9), Color(0xFF475569));
+      case 'residence':
+        return (Icons.home_rounded, Color(0xFFE7F3EC), Color(0xFF1E7A48));
+      case 'regularisation':
+      case 'autorisation_construire':
+      case 'mutation_parcelle':
+        return (Icons.map_rounded, Color(0xFFF3EAFB), Color(0xFF7A3DAE));
+      default:
+        return (Icons.description_rounded, Color(0xFFE6F0FB), Color(0xFF1B4A9C));
+    }
+  }
+
+  /// (libellé, couleur texte, fond pastille) selon le statut.
+  (String, Color, Color) _statusStyle() {
+    if (_isDone) {
+      return ('Prêt', const Color(0xFF1E7A48), const Color(0xFFE7F3EC));
+    }
+    if (_isIncomplete) {
+      return ('À corriger', const Color(0xFFA32D2D), const Color(0xFFFCEBEB));
+    }
+    String label;
+    switch (dossier.status) {
+      case 'soumis':
+        label = 'Soumis';
+        break;
+      case 'en_verification':
+        label = 'En vérification';
+        break;
+      default:
+        label = 'En cours';
+    }
+    return (label, const Color(0xFF9A6308), const Color(0xFFFBF0DC));
+  }
+
+  Widget _btn(String label, IconData? icon, Color bg, Color fg,
+      {required bool filled}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: bg, border: Border.all(color: border), borderRadius: BorderRadius.circular(100)),
+      height: 42,
+      alignment: Alignment.center,
+      padding: filled ? null : const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: filled ? bg : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: filled ? null : Border.all(color: const Color(0xFFE2E8F0)),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600, fontFamily: 'Poppins')),
-        ],
-      ),
-    );
-  }
-
-  Widget _actionBtn(String label, IconData icon, Color? bg, Color text, {Color? border, bool useGradient = false}) {
-    return Container(
-      height: 36,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: useGradient ? null : bg,
-        gradient: useGradient ? const LinearGradient(colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)], begin: Alignment.topCenter, end: Alignment.bottomCenter) : null,
-        borderRadius: BorderRadius.circular(100),
-        border: border != null ? Border.all(color: border) : null,
-      ),
-      child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 14, color: text),
-          const SizedBox(width: 4),
-          Text(label, style: TextStyle(color: text, fontSize: 12, fontWeight: FontWeight.w700, fontFamily: 'Poppins')),
+          if (icon != null) ...[
+            Icon(icon, size: 16, color: fg),
+            const SizedBox(width: 6),
+          ],
+          Text(label,
+              style: TextStyle(
+                  color: fg,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Poppins')),
         ],
       ),
     );
