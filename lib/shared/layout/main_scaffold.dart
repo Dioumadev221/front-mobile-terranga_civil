@@ -29,51 +29,75 @@ class MainScaffold extends StatelessWidget {
           splashColor: Colors.transparent,
           highlightColor: Colors.transparent,
         ),
-        child: Container(
-          margin: const EdgeInsets.only(left: 20, right: 20, bottom: 8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(32),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.10),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+        child: SafeArea(
+          top: false,
+          minimum: const EdgeInsets.only(bottom: 8),
+          child: SizedBox(
+            height: 78,
+            child: Stack(
+              clipBehavior: Clip.none,
               children: [
-                _NavItem(
-                  label: 'Accueil',
-                  icon: Icons.home_rounded,
-                  isActive: currentIndex == 0,
-                  onTap: () => context.go(AppRoutes.home),
+                // ── Barre pill ──
+                Positioned(
+                  left: 20,
+                  right: 20,
+                  bottom: 0,
+                  child: Container(
+                    height: 62,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(26),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.10),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _NavItem(
+                          label: 'Accueil',
+                          icon: Icons.home_rounded,
+                          isActive: currentIndex == 0,
+                          onTap: () => context.go(AppRoutes.home),
+                        ),
+                        _NavItem(
+                          label: 'Dossiers',
+                          icon: Icons.folder_rounded,
+                          isActive: currentIndex == 1,
+                          onTap: () => context.go(AppRoutes.dossiers),
+                        ),
+                        const SizedBox(width: 56),
+                        _NavItem(
+                          label: 'Documents',
+                          icon: Icons.article_rounded,
+                          isActive: currentIndex == 3,
+                          onTap: () => context.go(AppRoutes.documents),
+                        ),
+                        _NavItem(
+                          label: 'Profil',
+                          icon: Icons.person_rounded,
+                          isActive: currentIndex == 4,
+                          onTap: () => context.go(AppRoutes.profile),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                _NavItem(
-                  label: 'Dossiers',
-                  icon: Icons.folder_rounded,
-                  isActive: currentIndex == 1,
-                  onTap: () => context.go(AppRoutes.dossiers),
-                ),
-                // ── Bouton IA central (pile au milieu des 5 items) ──
-                _NdiogoyeButton(
-                  onTap: () => context.push(AppRoutes.agentChat),
-                ),
-                _NavItem(
-                  label: 'Documents',
-                  icon: Icons.article_rounded,
-                  isActive: currentIndex == 3,
-                  onTap: () => context.go(AppRoutes.documents),
-                ),
-                _NavItem(
-                  label: 'Profil',
-                  icon: Icons.person_rounded,
-                  isActive: currentIndex == 4,
-                  onTap: () => context.go(AppRoutes.profile),
+                // ── Bouton Ndiogoye central surélevé ──
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: _NdiogoyeButton(
+                      onTap: () => context.push(AppRoutes.agentChat),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -98,24 +122,35 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? AppColors.primary : AppColors.textHint;
+    final color =
+        isActive ? AppColors.primary : const Color(0xFF94A3B8);
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
-        width: 56,
-        height: 56,
+        width: 54,
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 4),
+            Container(
+              width: 42,
+              height: 26,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: isActive
+                    ? const Color(0xFFE9F1FB)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(100),
+              ),
+              child: Icon(icon, color: color, size: 21),
+            ),
+            const SizedBox(height: 3),
             Text(
               label,
               style: TextStyle(
                 color: color,
-                fontSize: 10,
-                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                fontSize: 10.5,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                 letterSpacing: -0.2,
               ),
             ),
@@ -135,24 +170,25 @@ class _NdiogoyeButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 56,
-        height: 56,
+        width: 58,
+        height: 58,
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [AppColors.primary, AppColors.primaryLight],
+            colors: [Color(0xFF2C6FB8), AppColors.primary],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           shape: BoxShape.circle,
+          border: Border.all(color: AppColors.background, width: 4),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: AppColors.primary.withValues(alpha: 0.35),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
-        child: const Icon(Icons.mic_rounded, color: Colors.white, size: 28),
+        child: const Icon(Icons.mic_rounded, color: Colors.white, size: 26),
       ),
     );
   }
