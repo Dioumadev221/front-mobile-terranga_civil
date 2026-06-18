@@ -178,22 +178,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 2),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.location_on_rounded,
-                                        color: Color(0xFF93C5FD), size: 14),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      commune,
-                                      style: const TextStyle(
-                                        color: Color(0xFF93C5FD),
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
+                                if (commune.isNotEmpty &&
+                                    commune != 'Non renseignée') ...[
+                                  const SizedBox(height: 2),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.location_on_rounded,
+                                          color: Color(0xFF93C5FD), size: 14),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        commune,
+                                        style: const TextStyle(
+                                          color: Color(0xFF93C5FD),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
+                                    ],
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -280,7 +283,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 34),
+                    const SizedBox(height: 52),
                       ],
                     ),
                   ),
