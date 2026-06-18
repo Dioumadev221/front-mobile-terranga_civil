@@ -298,35 +298,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               offset: const Offset(0, -40),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Consumer(
-                  builder: (context, ref, _) {
-                    // Ndiogoye Proactif : visible uniquement si le citoyen
-                    // a déjà au moins une demande, et son contenu est généré
-                    // à partir des dossiers réels de l'utilisateur connecté
-                    // (pas de texte générique identique pour tout le monde).
-                    final dossiers = ref.watch(dossiersListProvider).maybeWhen(
-                          data: (d) => d,
-                          orElse: () => const <DossierModel>[],
-                        );
-                    return Column(
-                      children: [
-                        const _MainActionCard(),
-                        const SizedBox(height: 32),
-                        if (dossiers.isNotEmpty) ...[
-                          _ProactiveAlertCard(dossiers: dossiers),
-                          const SizedBox(height: 32),
-                        ],
-                        const _QuickActionsGrid(),
-                        const SizedBox(height: 32),
-                        const _TimelineSection(),
-                        const SizedBox(height: 32),
-                        const _AppointmentsSection(),
-                        const SizedBox(height: 32),
-                        const _CityHallLocationCard(),
-                        const SizedBox(height: 120),
-                      ],
-                    );
-                  },
+                child: Column(
+                  children: const [
+                    _MainActionCard(),
+                    SizedBox(height: 32),
+                    _QuickActionsGrid(),
+                    SizedBox(height: 32),
+                    _TimelineSection(),
+                    SizedBox(height: 32),
+                    _AppointmentsSection(),
+                    SizedBox(height: 32),
+                    _CityHallLocationCard(),
+                    SizedBox(height: 120),
+                  ],
                 ),
               ),
             ),
