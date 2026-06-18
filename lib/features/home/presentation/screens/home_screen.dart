@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -77,18 +76,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 child: Stack(
                   children: [
-                    // Photo de Dakar floutée en arrière-plan (effet premium)
+                    // Halo bleu (haut-droite) — dégradé radial pleine largeur
                     Positioned.fill(
-                      child: ImageFiltered(
-                        imageFilter: ui.ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                        child: Image.asset(
-                          'assets/images/dakar_hero.jpg',
-                          fit: BoxFit.cover,
-                          alignment: Alignment.center,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: RadialGradient(
+                            center: const Alignment(0.7, -0.85),
+                            radius: 1.1,
+                            colors: [
+                              const Color(0xFF2C6FB8).withValues(alpha: 0.85),
+                              const Color(0xFF2C6FB8).withValues(alpha: 0.0),
+                            ],
+                            stops: const [0.0, 0.6],
+                          ),
                         ),
                       ),
                     ),
-                    // Voile navy pour la lisibilité du texte + identité de marque
+                    // Halo ambre/terracotta (bas-gauche)
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: RadialGradient(
+                            center: const Alignment(-0.95, 0.9),
+                            radius: 1.1,
+                            colors: [
+                              const Color(0xFFC9883E).withValues(alpha: 0.70),
+                              const Color(0xFFC9883E).withValues(alpha: 0.0),
+                            ],
+                            stops: const [0.0, 0.55],
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Voile sombre pour la lisibilité du texte
                     Positioned.fill(
                       child: DecoratedBox(
                         decoration: BoxDecoration(
@@ -96,9 +116,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              const Color(0xFF0B285D).withValues(alpha: 0.80),
-                              const Color(0xFF0B2E66).withValues(alpha: 0.58),
-                              const Color(0xFF0A1F4D).withValues(alpha: 0.94),
+                              const Color(0xFF081637).withValues(alpha: 0.35),
+                              const Color(0xFF081637).withValues(alpha: 0.10),
+                              const Color(0xFF081637).withValues(alpha: 0.55),
                             ],
                           ),
                         ),
