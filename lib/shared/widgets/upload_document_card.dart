@@ -115,24 +115,16 @@ class _EmptyState extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(title, style: AppTextStyles.labelLarge),
-                    if (isRequired) ...[
-                      const SizedBox(width: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.statusRedLight,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          'Requis',
-                          style: AppTextStyles.caption.copyWith(
-                              color: AppColors.statusRed,
-                              fontSize: 10),
+                    Flexible(
+                        child: Text(title, style: AppTextStyles.labelLarge)),
+                    if (isRequired)
+                      Text(
+                        ' *',
+                        style: AppTextStyles.labelLarge.copyWith(
+                          color: AppColors.statusRed,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
-                    ],
                   ],
                 ),
                 const SizedBox(height: 2),

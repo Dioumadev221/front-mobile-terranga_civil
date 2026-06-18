@@ -594,19 +594,9 @@ class _LienParenteField extends StatelessWidget {
       children: [
         Row(children: [
           Text('Lien avec le défunt', style: AppTextStyles.inputLabel),
-          const SizedBox(width: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: AppColors.statusRedLight,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text('Requis',
-                style: AppTextStyles.caption.copyWith(
-                    color: AppColors.statusRed,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600)),
-          ),
+          Text(' *',
+              style: AppTextStyles.inputLabel.copyWith(
+                  color: AppColors.statusRed, fontWeight: FontWeight.w800)),
         ]),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
