@@ -62,12 +62,14 @@ class MainScaffold extends StatelessWidget {
                         _NavItem(
                           label: 'Accueil',
                           icon: Icons.home_rounded,
+                          imageAsset: 'assets/images/menu/accueil.png',
                           isActive: currentIndex == 0,
                           onTap: () => context.go(AppRoutes.home),
                         ),
                         _NavItem(
                           label: 'Dossiers',
                           icon: Icons.folder_rounded,
+                          imageAsset: 'assets/images/menu/dossiers.png',
                           isActive: currentIndex == 1,
                           onTap: () => context.go(AppRoutes.dossiers),
                         ),
@@ -75,12 +77,14 @@ class MainScaffold extends StatelessWidget {
                         _NavItem(
                           label: 'Documents',
                           icon: Icons.article_rounded,
+                          imageAsset: 'assets/images/menu/documents.png',
                           isActive: currentIndex == 3,
                           onTap: () => context.go(AppRoutes.documents),
                         ),
                         _NavItem(
                           label: 'Profil',
                           icon: Icons.person_rounded,
+                          imageAsset: 'assets/images/menu/profil.png',
                           isActive: currentIndex == 4,
                           onTap: () => context.go(AppRoutes.profile),
                         ),
@@ -113,11 +117,13 @@ class _NavItem extends StatelessWidget {
   final IconData icon;
   final bool isActive;
   final VoidCallback onTap;
+  final String? imageAsset;
   const _NavItem({
     required this.label,
     required this.icon,
     required this.isActive,
     required this.onTap,
+    this.imageAsset,
   });
 
   @override
@@ -142,7 +148,13 @@ class _NavItem extends StatelessWidget {
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(100),
               ),
-              child: Icon(icon, color: color, size: 21),
+              child: imageAsset != null
+                  ? ColorFiltered(
+                      colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+                      child: Image.asset(imageAsset!,
+                          width: 19, height: 19, fit: BoxFit.contain),
+                    )
+                  : Icon(icon, color: color, size: 21),
             ),
             const SizedBox(height: 3),
             Text(
