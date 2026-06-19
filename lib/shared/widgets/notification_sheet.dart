@@ -34,7 +34,7 @@ void showNotificationsSheet(BuildContext context) {
   if (t.contains('rejet') || t.contains('action requise')) {
     return (icon: Icons.cancel_outlined, color: const Color(0xFFEF4444));
   }
-  return (icon: Icons.inbox_outlined, color: const Color(0xFF3B82F6));
+  return (icon: Icons.inbox_outlined, color: const Color(0xFF0B285D));
 }
 
 String _relativeTime(DateTime? dt) {

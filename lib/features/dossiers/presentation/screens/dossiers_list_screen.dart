@@ -501,13 +501,13 @@ class _DossierCard extends ConsumerWidget {
                     children: [
                       Text('Détail',
                           style: TextStyle(
-                              color: Color(0xFF1B4A9C),
+                              color: Color(0xFF0B285D),
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               fontFamily: 'Poppins')),
                       SizedBox(width: 4),
                       Icon(Icons.arrow_forward_rounded,
-                          size: 15, color: Color(0xFF1B4A9C)),
+                          size: 15, color: Color(0xFF0B285D)),
                     ],
                   ),
                 ],
@@ -522,7 +522,7 @@ class _DossierCard extends ConsumerWidget {
   (IconData, Color, Color) _typeStyle(String type) {
     switch (type) {
       case 'naissance':
-        return (Icons.child_friendly_rounded, Color(0xFFE6F0FB), Color(0xFF1B4A9C));
+        return (Icons.child_friendly_rounded, Color(0xFFE6F0FB), Color(0xFF0B285D));
       case 'mariage':
         return (Icons.favorite_rounded, Color(0xFFFBE9EF), Color(0xFFB23A60));
       case 'deces':
@@ -534,7 +534,7 @@ class _DossierCard extends ConsumerWidget {
       case 'mutation_parcelle':
         return (Icons.map_rounded, Color(0xFFF3EAFB), Color(0xFF7A3DAE));
       default:
-        return (Icons.description_rounded, Color(0xFFE6F0FB), Color(0xFF1B4A9C));
+        return (Icons.description_rounded, Color(0xFFE6F0FB), Color(0xFF0B285D));
     }
   }
 

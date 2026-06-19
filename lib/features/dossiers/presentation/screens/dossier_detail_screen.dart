@@ -45,7 +45,7 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
               children: [
                 Container(
                   width: 56, height: 56,
-                  decoration: const BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+                  decoration: const BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: [Color(0xFF0B285D), Color(0xFF0B285D)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
                   alignment: Alignment.center,
                   child: const Text('AG', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800, fontFamily: 'Poppins')),
                 ),
@@ -75,9 +75,9 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.message, color: Color(0xFF1D4ED8), size: 20),
+                          Icon(Icons.message, color: Color(0xFF0B285D), size: 20),
                           SizedBox(width: 10),
-                          Text('Message', style: TextStyle(color: Color(0xFF1D4ED8), fontSize: 16, fontWeight: FontWeight.w700, fontFamily: 'Poppins')),
+                          Text('Message', style: TextStyle(color: Color(0xFF0B285D), fontSize: 16, fontWeight: FontWeight.w700, fontFamily: 'Poppins')),
                         ],
                       ),
                     ),
@@ -182,7 +182,7 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
                     Container(
                       decoration: const BoxDecoration(
                         borderRadius: BorderRadius.only(bottomLeft: Radius.circular(32), bottomRight: Radius.circular(32)),
-                        gradient: LinearGradient(colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)], begin: Alignment.topCenter, end: Alignment.bottomCenter),
+                        gradient: LinearGradient(colors: [Color(0xFF0B285D), Color(0xFF0B285D)], begin: Alignment.topCenter, end: Alignment.bottomCenter),
                       ),
                       padding: const EdgeInsets.fromLTRB(20, 56, 20, 24),
                       child: Column(
@@ -294,7 +294,7 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
                                     alignment: Alignment.center,
                                     child: Icon(
                                       d.agentNom != null ? Icons.support_agent : Icons.person_outline,
-                                      color: d.agentNom != null ? const Color(0xFF1D4ED8) : const Color(0xFF94A3B8),
+                                      color: d.agentNom != null ? const Color(0xFF0B285D) : const Color(0xFF94A3B8),
                                       size: 22,
                                     ),
                                   ),
@@ -324,7 +324,7 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
                                     children: [
                                       GestureDetector(
                                         onTap: d.agentNom != null ? _showContactModal : null,
-                                        child: Container(width: 36, height: 36, decoration: const BoxDecoration(color: Color(0xFFF8FAFC), shape: BoxShape.circle), child: Icon(Icons.message_outlined, size: 16, color: d.agentNom != null ? const Color(0xFF1D4ED8) : const Color(0xFFCBD5E1))),
+                                        child: Container(width: 36, height: 36, decoration: const BoxDecoration(color: Color(0xFFF8FAFC), shape: BoxShape.circle), child: Icon(Icons.message_outlined, size: 16, color: d.agentNom != null ? const Color(0xFF0B285D) : const Color(0xFFCBD5E1))),
                                       ),
                                       const SizedBox(width: 8),
                                       GestureDetector(
@@ -411,7 +411,7 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
                                     child: Container(
                                       width: double.infinity, height: 48,
                                       margin: const EdgeInsets.only(bottom: 10),
-                                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), gradient: const LinearGradient(colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+                                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), gradient: const LinearGradient(colors: [Color(0xFF0B285D), Color(0xFF0B285D)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
                                       alignment: Alignment.center,
                                       child: const Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
@@ -430,7 +430,7 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
                                     child: GestureDetector(
                                       onTap: _showContactModal,
                                       child: Container(height: 48, decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(12)), alignment: Alignment.center,
-                                        child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.message, color: Color(0xFF1D4ED8), size: 18), SizedBox(width: 6), Text('Contacter l\'agent', style: TextStyle(color: Color(0xFF1D4ED8), fontSize: 13, fontWeight: FontWeight.w700, fontFamily: 'Poppins'))]),
+                                        child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.message, color: Color(0xFF0B285D), size: 18), SizedBox(width: 6), Text('Contacter l\'agent', style: TextStyle(color: Color(0xFF0B285D), fontSize: 13, fontWeight: FontWeight.w700, fontFamily: 'Poppins'))]),
                                       ),
                                     ),
                                   ),
@@ -462,11 +462,11 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(Icons.event_rounded,
-                                          color: Color(0xFF1D4ED8), size: 18),
+                                          color: Color(0xFF0B285D), size: 18),
                                       SizedBox(width: 8),
                                       Text('Prendre un rendez-vous',
                                           style: TextStyle(
-                                              color: Color(0xFF1D4ED8),
+                                              color: Color(0xFF0B285D),
                                               fontSize: 14,
                                               fontWeight: FontWeight.w700,
                                               fontFamily: 'Poppins')),
@@ -544,7 +544,7 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
                 borderRadius: BorderRadius.circular(10)),
             alignment: Alignment.center,
             child: const Icon(Icons.insert_drive_file_outlined,
-                color: Color(0xFF1D4ED8), size: 18),
+                color: Color(0xFF0B285D), size: 18),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -683,7 +683,7 @@ class _DossierDetailScreenState extends ConsumerState<DossierDetailScreen> {
       child: Row(
         children: [
           Container(width: 24, height: 24, decoration: const BoxDecoration(color: Color(0xFFEFF6FF), shape: BoxShape.circle), alignment: Alignment.center,
-            child: Text(num, style: const TextStyle(color: Color(0xFF1D4ED8), fontSize: 11, fontWeight: FontWeight.w700, fontFamily: 'Poppins'))),
+            child: Text(num, style: const TextStyle(color: Color(0xFF0B285D), fontSize: 11, fontWeight: FontWeight.w700, fontFamily: 'Poppins'))),
           const SizedBox(width: 12),
           Expanded(child: Text(name, style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14, fontWeight: FontWeight.w500, fontFamily: 'Poppins', height: 1.3))),
           Container(

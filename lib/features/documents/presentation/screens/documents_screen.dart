@@ -39,7 +39,7 @@ class DocumentsScreen extends ConsumerWidget {
     _Famille(
       name: 'Naissance',
       icon: Icons.child_care_rounded,
-      color: Color(0xFF2563EB),
+      color: Color(0xFF0B285D),
       desc: 'Naissance, identité',
       items: [
         _Demarche('Acte de naissance', Icons.edit_document),
@@ -178,7 +178,7 @@ class DocumentsScreen extends ConsumerWidget {
                   bottomRight: Radius.circular(32),
                 ),
                 gradient: LinearGradient(
-                  colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)],
+                  colors: [Color(0xFF0B285D), Color(0xFF0B285D)],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
@@ -313,7 +313,7 @@ class _MostRequestedCard extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(100),
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)],
+                  colors: [Color(0xFF0B285D), Color(0xFF0B285D)],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),

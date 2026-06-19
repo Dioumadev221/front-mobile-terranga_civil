@@ -28,7 +28,7 @@ class AppointmentsScreen extends ConsumerWidget {
             height: 54,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)],
+                colors: [Color(0xFF0B285D), Color(0xFF0B285D)],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -69,7 +69,7 @@ class AppointmentsScreen extends ConsumerWidget {
                 bottomRight: Radius.circular(28),
               ),
               gradient: LinearGradient(
-                colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)],
+                colors: [Color(0xFF0B285D), Color(0xFF0B285D)],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -143,7 +143,7 @@ class _AppointmentCard extends StatelessWidget {
   Color get _statusColor {
     switch (appt.status) {
       case 'scheduled':
-        return const Color(0xFF2563EB);
+        return const Color(0xFF0B285D);
       case 'completed':
         return const Color(0xFF10B981);
       case 'cancelled':
@@ -169,7 +169,7 @@ class _AppointmentCard extends StatelessWidget {
           Row(
             children: [
               const Icon(Icons.event_rounded,
-                  color: Color(0xFF1B4A9C), size: 20),
+                  color: Color(0xFF0B285D), size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(

@@ -37,7 +37,7 @@ class CategoryDemarchesScreen extends StatelessWidget {
                   bottomRight: Radius.circular(32),
                 ),
                 gradient: LinearGradient(
-                  colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)],
+                  colors: [Color(0xFF0B285D), Color(0xFF0B285D)],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
@@ -112,7 +112,7 @@ class CategoryDemarchesScreen extends StatelessWidget {
                               ),
                               child: Icon(item['icon'] as IconData,
                                   color: available
-                                      ? const Color(0xFF3B82F6)
+                                      ? const Color(0xFF0B285D)
                                       : const Color(0xFF94A3B8),
                                   size: 20),
                             ),

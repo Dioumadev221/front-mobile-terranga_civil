@@ -158,7 +158,7 @@ class _AgentChatScreenState extends ConsumerState<AgentChatScreen> {
                   bottomRight: Radius.circular(32),
                 ),
                 gradient: LinearGradient(
-                  colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)],
+                  colors: [Color(0xFF0B285D), Color(0xFF0B285D)],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
@@ -356,7 +356,7 @@ class _SuggestionsView extends StatelessWidget {
                         child: Text(
                           s,
                           style: const TextStyle(
-                            color: Color(0xFF1B4A9C),
+                            color: Color(0xFF0B285D),
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
@@ -413,7 +413,7 @@ class _MessageBubble extends StatelessWidget {
                     color: isUser ? null : Colors.white,
                     gradient: isUser
                         ? const LinearGradient(
-                            colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)],
+                            colors: [Color(0xFF0B285D), Color(0xFF0B285D)],
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                           )
@@ -497,7 +497,7 @@ class _DossierActionCard extends StatelessWidget {
           Row(
             children: [
               const Icon(Icons.folder_open_rounded,
-                  color: Color(0xFF1B4A9C), size: 18),
+                  color: Color(0xFF0B285D), size: 18),
               const SizedBox(width: 8),
               Text(
                 'Dossier créé : $reference',
@@ -522,7 +522,7 @@ class _DossierActionCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 11),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)],
+                  colors: [Color(0xFF0B285D), Color(0xFF0B285D)],
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -736,7 +736,7 @@ class _InputBar extends StatelessWidget {
           _RoundIcon(
             icon: Icons.add_rounded,
             onTap: onUpload,
-            iconColor: const Color(0xFF1B4A9C),
+            iconColor: const Color(0xFF0B285D),
             bg: const Color(0xFFEFF3FA),
             size: 44,
           ),

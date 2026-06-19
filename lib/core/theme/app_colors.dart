@@ -10,13 +10,13 @@ abstract class AppColors {
 
   // ── Couleurs principales (bleu profond) ──────────────────────────────────
   static const Color primary      = Color(0xFF0B285D);
-  static const Color primaryLight = Color(0xFF153B80);
+  static const Color primaryLight = Color(0xFF0B285D);
   static const Color primaryDark  = Color(0xFF061533);
-  static const Color secondary    = Color(0xFF153B80); // accent bleu
+  static const Color secondary    = Color(0xFF0B285D); // accent bleu
   static const Color secondaryDark = Color(0xFF0B285D);
 
   // ── Or → recoloré bleu ───────────────────────────────────────────────────
-  static const Color gold      = Color(0xFF153B80);
+  static const Color gold      = Color(0xFF0B285D);
   static const Color goldLight = Color(0xFFEAF0FB);
 
   // ── Fond & surfaces ──────────────────────────────────────────────────────
@@ -34,7 +34,7 @@ abstract class AppColors {
   static const Color statusAmber = Color(0xFFF59E0B); // warning
   static const Color statusRed   = Color(0xFFEF4444); // error
   static const Color statusGreen = Color(0xFF10B981); // success
-  static const Color statusBlue  = Color(0xFF3B82F6); // info
+  static const Color statusBlue  = Color(0xFF0B285D); // info
 
   // ── Backgrounds statuts ──────────────────────────────────────────────────
   static const Color statusAmberLight = Color(0xFFFEF3C7);
@@ -69,32 +69,32 @@ abstract class AppColors {
 
   // ── Dégradés ─────────────────────────────────────────────────────────────
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF0B285D), Color(0xFF153B80)],
+    colors: [Color(0xFF0B285D), Color(0xFF0B285D)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   // Dégradé d'en-tête utilisé partout : #0B285D → #1B4A9C (haut → bas).
   static const LinearGradient primaryGradientVertical = LinearGradient(
-    colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)],
+    colors: [Color(0xFF0B285D), Color(0xFF0B285D)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
 
   static const LinearGradient secondaryGradient = LinearGradient(
-    colors: [Color(0xFF153B80), Color(0xFF0B285D)],
+    colors: [Color(0xFF0B285D), Color(0xFF0B285D)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient goldGradient = LinearGradient(
-    colors: [Color(0xFF153B80), Color(0xFF1B4A9C)],
+    colors: [Color(0xFF0B285D), Color(0xFF0B285D)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient headerGradient = LinearGradient(
-    colors: [Color(0xFF0B285D), Color(0xFF143C82), Color(0xFF1B4A9C)],
+    colors: [Color(0xFF0B285D), Color(0xFF143C82), Color(0xFF0B285D)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     stops: [0.0, 0.5, 1.0],

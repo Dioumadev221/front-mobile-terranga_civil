@@ -391,7 +391,7 @@ class _QuickActionsGrid extends StatelessWidget {
                 'Naissance',
                 Icons.child_friendly_rounded,
                 const Color(0xFFEFF6FF),
-                const Color(0xFF2563EB),
+                const Color(0xFF0B285D),
                 subtitle: 'Extrait, acte',
                 onTap: () => context.push(AppRoutes.categoryDemarches, extra: {
                   'category': 'Naissance',
@@ -730,7 +730,7 @@ class _TimelineSection extends ConsumerWidget {
                       padding: EdgeInsets.all(16.0),
                       child: CircularProgressIndicator(
                         valueColor:
-                            AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+                            AlwaysStoppedAnimation<Color>(Color(0xFF0B285D)),
                       ),
                     ),
                   ),
@@ -914,7 +914,7 @@ class _ProactiveAlertCardState extends State<_ProactiveAlertCard> {
       case 'en_verification':
         return {
           'icon': Icons.hourglass_top_rounded,
-          'color': const Color(0xFF3B82F6),
+          'color': const Color(0xFF0B285D),
           'bgColor': const Color(0xFFEFF6FF),
           'text': 'Votre demande de $label est en cours de vérification.',
           'actionText': 'Suivre',
@@ -924,7 +924,7 @@ class _ProactiveAlertCardState extends State<_ProactiveAlertCard> {
       case 'soumis':
         return {
           'icon': Icons.send_rounded,
-          'color': const Color(0xFF3B82F6),
+          'color': const Color(0xFF0B285D),
           'bgColor': const Color(0xFFEFF6FF),
           'text': 'Votre demande de $label a bien été soumise.',
           'actionText': 'Suivre',
@@ -986,7 +986,7 @@ class _ProactiveAlertCardState extends State<_ProactiveAlertCard> {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF0B285D), Color(0xFF1B4A9C)],
+          colors: [Color(0xFF0B285D), Color(0xFF0B285D)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -1218,14 +1218,14 @@ class _AppointmentsSection extends ConsumerWidget {
                       Text(
                         'Prendre RDV',
                         style: TextStyle(
-                          color: Color(0xFF3B82F6),
+                          color: Color(0xFF0B285D),
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       SizedBox(width: 4),
                       Icon(Icons.add_circle_outline_rounded,
-                          color: Color(0xFF3B82F6), size: 16),
+                          color: Color(0xFF0B285D), size: 16),
                     ],
                   ),
                 ),
@@ -1262,7 +1262,7 @@ class _AppointmentsSection extends ConsumerWidget {
                           child: Text(
                             'Voir tous mes rendez-vous (${list.length})',
                             style: const TextStyle(
-                                color: Color(0xFF3B82F6),
+                                color: Color(0xFF0B285D),
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600),
                           ),
@@ -1312,7 +1312,7 @@ class _HomeAppointmentTile extends StatelessWidget {
   Color get _statusColor {
     switch (appt.status) {
       case 'scheduled':
-        return const Color(0xFF2563EB);
+        return const Color(0xFF0B285D);
       case 'completed':
         return const Color(0xFF10B981);
       case 'cancelled':
@@ -1439,7 +1439,7 @@ class _CityHallLocationCard extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Icon(Icons.account_balance_rounded,
-                        color: Color(0xFF2563EB), size: 24),
+                        color: Color(0xFF0B285D), size: 24),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -1511,7 +1511,7 @@ class _CityHallLocationCard extends ConsumerWidget {
                       label: const Text('Itinéraire'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFEFF6FF),
-                        foregroundColor: const Color(0xFF2563EB),
+                        foregroundColor: const Color(0xFF0B285D),
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
@@ -1624,7 +1624,7 @@ class _DemarcheSearchSheetState extends State<_DemarcheSearchSheet> {
               onChanged: (v) => setState(() => _q = v.trim()),
               decoration: InputDecoration(
                 hintText: 'Rechercher une démarche (naissance, mariage…)',
-                prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF3B82F6)),
+                prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF0B285D)),
                 filled: true,
                 fillColor: const Color(0xFFF8FAFC),
                 border: OutlineInputBorder(

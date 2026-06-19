@@ -82,7 +82,7 @@ class BeneficiaryChoiceScreen extends StatelessWidget {
                     subtitle:
                         'Utilisez vos données de profil pour pré-remplir le formulaire rapidement.',
                     icon: Icons.person_rounded,
-                    color: const Color(0xFF2563EB),
+                    color: const Color(0xFF0B285D),
                     bgColor: const Color(0xFFEFF6FF),
                     onTap: () => context.push(AppRoutes.naissanceRecapSelf),
                   ),
