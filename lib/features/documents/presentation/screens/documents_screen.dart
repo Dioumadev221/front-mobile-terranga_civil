@@ -21,12 +21,14 @@ class _Famille {
   final Color color;
   final String desc;
   final List<_Demarche> items;
+  final String? imageAsset;
   const _Famille({
     required this.name,
     required this.icon,
     required this.color,
     required this.desc,
     required this.items,
+    this.imageAsset,
   });
 }
 
@@ -41,6 +43,7 @@ class DocumentsScreen extends ConsumerWidget {
       icon: Icons.child_care_rounded,
       color: Color(0xFF0B285D),
       desc: 'Naissance, identité',
+      imageAsset: 'assets/images/demarches/naissance.png',
       items: [
         _Demarche('Acte de naissance', Icons.edit_document),
         _Demarche('Extrait de naissance', Icons.file_copy_rounded,
@@ -54,6 +57,7 @@ class DocumentsScreen extends ConsumerWidget {
       icon: Icons.favorite_rounded,
       color: Color(0xFFDC2626),
       desc: 'Mariage, célibat, famille',
+      imageAsset: 'assets/images/demarches/mariage.png',
       items: [
         _Demarche('Certificat de mariage', Icons.favorite_border_rounded,
             route: AppRoutes.mariageForm),
@@ -67,6 +71,7 @@ class DocumentsScreen extends ConsumerWidget {
       icon: Icons.local_florist_rounded,
       color: Color(0xFF475569),
       desc: 'Certificats et permis',
+      imageAsset: 'assets/images/demarches/deces.png',
       items: [
         _Demarche('Certificat de décès', Icons.assignment_rounded,
             route: AppRoutes.decesForm),
@@ -79,6 +84,7 @@ class DocumentsScreen extends ConsumerWidget {
       icon: Icons.home_work_rounded,
       color: Color(0xFFC026D3),
       desc: 'Résidence, terrain, permis',
+      imageAsset: 'assets/images/demarches/logement.png',
       items: [
         _Demarche('Certificat de résidence', Icons.home_outlined,
             route: AppRoutes.residenceForm),
@@ -242,12 +248,21 @@ class DocumentsScreen extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
+                          width: 50,
+                          height: 50,
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: f.color.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(f.icon, color: f.color, size: 26),
+                          child: f.imageAsset != null
+                              ? ColorFiltered(
+                                  colorFilter: ColorFilter.mode(
+                                      f.color, BlendMode.srcIn),
+                                  child: Image.asset(f.imageAsset!,
+                                      fit: BoxFit.contain),
+                                )
+                              : Icon(f.icon, color: f.color, size: 26),
                         ),
                         const SizedBox(height: 12),
                         Text(f.name,

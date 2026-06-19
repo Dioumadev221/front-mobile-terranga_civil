@@ -400,9 +400,20 @@ class _DossierCard extends ConsumerWidget {
                 Container(
                   width: 44,
                   height: 44,
+                  padding: _typeImage(dossier.type) != null
+                      ? const EdgeInsets.all(11)
+                      : null,
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
                       color: t.$2, borderRadius: BorderRadius.circular(13)),
-                  child: Icon(t.$1, color: t.$3, size: 22),
+                  child: _typeImage(dossier.type) != null
+                      ? ColorFiltered(
+                          colorFilter:
+                              ColorFilter.mode(t.$3, BlendMode.srcIn),
+                          child: Image.asset(_typeImage(dossier.type)!,
+                              fit: BoxFit.contain),
+                        )
+                      : Icon(t.$1, color: t.$3, size: 22),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -516,6 +527,25 @@ class _DossierCard extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// Icône PNG personnalisée selon le type (null = on garde l'icône Material).
+  String? _typeImage(String type) {
+    switch (type) {
+      case 'naissance':
+        return 'assets/images/demarches/naissance.png';
+      case 'mariage':
+        return 'assets/images/demarches/mariage.png';
+      case 'deces':
+        return 'assets/images/demarches/deces.png';
+      case 'residence':
+      case 'regularisation':
+      case 'autorisation_construire':
+      case 'mutation_parcelle':
+        return 'assets/images/demarches/logement.png';
+      default:
+        return null;
+    }
   }
 
   /// (icône, fond, couleur) selon le type de démarche.

@@ -665,14 +665,31 @@ class _TimelineSection extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Activité récente',
-                  style: TextStyle(
-                    color: Color(0xFF1E293B),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.3,
-                  ),
+                Row(
+                  children: const [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: ColorFiltered(
+                        colorFilter: ColorFilter.mode(
+                            Color(0xFF0B285D), BlendMode.srcIn),
+                        child: Image(
+                            image: AssetImage(
+                                'assets/images/menu/activite.png'),
+                            fit: BoxFit.contain),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Activité récente',
+                      style: TextStyle(
+                        color: Color(0xFF1E293B),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ],
                 ),
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
@@ -1213,14 +1230,31 @@ class _AppointmentsSection extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Vos rendez-vous',
-                  style: TextStyle(
-                    color: Color(0xFF1E293B),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.3,
-                  ),
+                Row(
+                  children: const [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: ColorFiltered(
+                        colorFilter: ColorFilter.mode(
+                            Color(0xFF0B285D), BlendMode.srcIn),
+                        child: Image(
+                            image: AssetImage(
+                                'assets/images/menu/rendezvous.png'),
+                            fit: BoxFit.contain),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Vos rendez-vous',
+                      style: TextStyle(
+                        color: Color(0xFF1E293B),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ],
                 ),
                 GestureDetector(
                   onTap: () => context.push(AppRoutes.appointments),
@@ -1449,8 +1483,17 @@ class _CityHallLocationCard extends ConsumerWidget {
                       color: const Color(0xFFEFF6FF),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Icon(Icons.account_balance_rounded,
-                        color: Color(0xFF0B285D), size: 24),
+                    child: const Padding(
+                      padding: EdgeInsets.all(11),
+                      child: ColorFiltered(
+                        colorFilter: ColorFilter.mode(
+                            Color(0xFF0B285D), BlendMode.srcIn),
+                        child: Image(
+                            image:
+                                AssetImage('assets/images/menu/mairie.png'),
+                            fit: BoxFit.contain),
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
