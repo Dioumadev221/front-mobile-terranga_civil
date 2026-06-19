@@ -152,7 +152,7 @@ class _NavItem extends StatelessWidget {
                   ? ColorFiltered(
                       colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
                       child: Image.asset(imageAsset!,
-                          width: 19, height: 19, fit: BoxFit.contain),
+                          width: 21, height: 21, fit: BoxFit.contain),
                     )
                   : Icon(icon, color: color, size: 21),
             ),
