@@ -393,6 +393,7 @@ class _QuickActionsGrid extends StatelessWidget {
                 const Color(0xFFEFF6FF),
                 const Color(0xFF0B285D),
                 subtitle: 'Extrait, acte',
+                imageAsset: 'assets/images/demarches/naissance.png',
                 onTap: () => context.push(AppRoutes.categoryDemarches, extra: {
                   'category': 'Naissance',
                   'items': [
@@ -424,6 +425,7 @@ class _QuickActionsGrid extends StatelessWidget {
                 const Color(0xFFFEF2F2),
                 const Color(0xFFDC2626),
                 subtitle: 'Certificat',
+                imageAsset: 'assets/images/demarches/mariage.png',
                 onTap: () => context.push(AppRoutes.categoryDemarches, extra: {
                   'category': 'Mariage & famille',
                   'items': [
@@ -454,6 +456,7 @@ class _QuickActionsGrid extends StatelessWidget {
                 const Color(0xFFF1F5F9),
                 const Color(0xFF475569),
                 subtitle: 'Acte, permis',
+                imageAsset: 'assets/images/demarches/deces.png',
                 onTap: () => context.push(AppRoutes.categoryDemarches, extra: {
                   'category': 'Décès',
                   'items': [
@@ -480,6 +483,7 @@ class _QuickActionsGrid extends StatelessWidget {
                 const Color(0xFFFDF4FF),
                 const Color(0xFFC026D3),
                 subtitle: 'Résidence, foncier',
+                imageAsset: 'assets/images/demarches/logement.png',
                 onTap: () => context.push(AppRoutes.categoryDemarches, extra: {
                   'category': 'Logement & Foncier',
                   'items': [
@@ -519,7 +523,7 @@ class _QuickActionsGrid extends StatelessWidget {
 
   Widget _buildSquareCard(BuildContext context, String title, IconData icon,
       Color bgColor, Color iconColor,
-      {required VoidCallback onTap, String? subtitle}) {
+      {required VoidCallback onTap, String? subtitle, String? imageAsset}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -547,7 +551,14 @@ class _QuickActionsGrid extends StatelessWidget {
                   color: bgColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: iconColor, size: 24),
+                child: imageAsset != null
+                    ? ColorFiltered(
+                        colorFilter:
+                            ColorFilter.mode(iconColor, BlendMode.srcIn),
+                        child: Image.asset(imageAsset,
+                            width: 26, height: 26, fit: BoxFit.contain),
+                      )
+                    : Icon(icon, color: iconColor, size: 24),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
