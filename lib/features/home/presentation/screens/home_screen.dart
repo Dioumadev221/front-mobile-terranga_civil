@@ -422,8 +422,8 @@ class _QuickActionsGrid extends StatelessWidget {
                 context,
                 'Mariage',
                 Icons.favorite_rounded,
-                const Color(0xFFFEF2F2),
-                const Color(0xFFDC2626),
+                const Color(0xFFE6F0FB),
+                const Color(0xFF0B285D),
                 subtitle: 'Certificat',
                 imageAsset: 'assets/images/demarches/mariage.png',
                 onTap: () => context.push(AppRoutes.categoryDemarches, extra: {
@@ -453,8 +453,8 @@ class _QuickActionsGrid extends StatelessWidget {
                 context,
                 'Décès',
                 Icons.local_florist_rounded,
-                const Color(0xFFF1F5F9),
-                const Color(0xFF475569),
+                const Color(0xFFE6F0FB),
+                const Color(0xFF0B285D),
                 subtitle: 'Acte, permis',
                 imageAsset: 'assets/images/demarches/deces.png',
                 onTap: () => context.push(AppRoutes.categoryDemarches, extra: {
@@ -480,8 +480,8 @@ class _QuickActionsGrid extends StatelessWidget {
                 context,
                 'Logement',
                 Icons.maps_home_work_rounded,
-                const Color(0xFFFDF4FF),
-                const Color(0xFFC026D3),
+                const Color(0xFFE6F0FB),
+                const Color(0xFF0B285D),
                 subtitle: 'Résidence, foncier',
                 imageAsset: 'assets/images/demarches/logement.png',
                 onTap: () => context.push(AppRoutes.categoryDemarches, extra: {
