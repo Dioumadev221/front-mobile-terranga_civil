@@ -129,7 +129,7 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color =
-        isActive ? AppColors.primary : const Color(0xFF94A3B8);
+        isActive ? AppColors.primary : const Color(0xFF475569);
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
