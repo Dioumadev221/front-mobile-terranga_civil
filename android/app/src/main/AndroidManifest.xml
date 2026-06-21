@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Accès réseau (appels API). Obligatoire en build release : en debug
+         Flutter l'ajoute tout seul, mais pas dans le manifeste principal. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Dictée vocale dans le chat Ndiogoye (package speech_to_text) -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <!-- Mairie la plus proche (geolocator) -->
